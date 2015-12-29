@@ -38,9 +38,6 @@ public:
 	double maxVelocity = 100; // 100 cm / second
 	cv::Point position;
 	cv::Point blobEstimate;
-	cv::Point coverageEstimate;
-	cv::Point areaEstimate;
-	cv::Point estimate;
 	cv::Scalar color;
 	cv::Mat* rgbSkinMask; // for debug
 	bool estimateUpdated = false;
@@ -61,24 +58,21 @@ public:
 	Hand();
 	~Hand();
 
-	void setup();
-	
-	void checkIntersect(cv::Point otherHandPosition);
-	int getNextIndex(int index);
-	int getPreviousIndex(int index);
+	void handleIntersection(cv::Point otherHandPosition);
 	void setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIntersection = false);
-	SearchMode getSearchModeFromBlobs(std::vector<BlobInformation>& blobs);
-
 	void solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs);
-	cv::Point getPredictedPosition(cv::Mat& skinMask);
-	void improveByAveraging(cv::Mat& skinMask);
 	bool improveByAreaSearch(cv::Mat& skinMask, cv::Point& position);
+	SearchMode getSearchModeFromBlobs(std::vector<BlobInformation>& blobs);
 	void improveByCoverage(cv::Mat& skinMask, SearchMode searchMode);
+	void improveByAveraging(cv::Mat& skinMask);
 	void draw(cv::Mat& canvas);
 	
 
 	
 private:
+	cv::Point getPredictedPosition(cv::Mat& skinMask);
+	int getNextIndex(int index);
+	int getPreviousIndex(int index);
 	double getPointQuality(cv::Point& point, cv::Mat& skinMask);
 	cv::Point lookAround(cv::Point start,
 		cv::Mat& skinMask,
@@ -96,7 +90,7 @@ private:
 		int yOffset,
 		int radius
 	);
-	double getMean(cv::Point& pos, cv::Mat& skinMask, int radius);
+	double getCoverage(cv::Point& pos, cv::Mat& skinMask, int radius);
 };
 
 class HandDetector {

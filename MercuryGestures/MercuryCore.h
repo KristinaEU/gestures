@@ -6,6 +6,8 @@
 #include <ctime>
 #include <stdio.h>
 
+#define DEBUG
+
 // based on // https://upload.wikimedia.org/wikipedia/commons/6/61/HeadAnthropometry.JPG
 const double averageFaceWidth = 15.705; //cm (95th percentile)
 const double averageFaceHeight = 23.95; //cm (95th percentile)
