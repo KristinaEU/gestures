@@ -33,6 +33,7 @@ struct BlobInformation {
 };
 
 
+
 class Hand {
 public:
 	double maxVelocity = 100; // 100 cm / second

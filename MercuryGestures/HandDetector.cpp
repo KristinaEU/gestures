@@ -411,12 +411,6 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 
 	this->leftHand.handleIntersection(this->rightHand.position);
 	this->rightHand.handleIntersection(this->leftHand.position);
-
-#ifdef DEBUG
-	cv::imshow("skinMaskFromHands", this->rgbSkinMask);
-	cv::imshow("movementMap", movementMap);
-	cv::imshow("skinMask", this->skinMask);
-#endif
 }
 
 
@@ -450,6 +444,11 @@ void HandDetector::updateFaceMask(cv::Mat& highBlobsMask) {
 void HandDetector::draw(cv::Mat& canvas) {
 	this->leftHand.draw(canvas);
 	this->rightHand.draw(canvas);
+
+#ifdef DEBUG
+	cv::imshow("skinMaskFromHands", this->rgbSkinMask);
+	cv::imshow("skinMask", this->skinMask);
+#endif
 }
 
 
