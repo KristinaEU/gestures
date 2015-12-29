@@ -26,3 +26,8 @@
 *.exe
 *.out
 *.app
+MercuryGestures/.vs/
+MercuryGestures/Release/MercuryGestures.tlog/
+MercuryGestures/media/
+MercuryGestures/Debug/MercuryGestures.tlog/
+MercuryGestures/MercuryGestures.VC.opendb
