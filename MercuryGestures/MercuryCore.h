@@ -29,6 +29,12 @@ struct BodyRects {
 	cv::Rect armLeftLower;
 };
 
+struct SearchSpace {
+	cv::Mat mat;
+	int x;
+	int y;
+};
+
 /*
  * Get center x and y for a rect
  */
@@ -70,3 +76,15 @@ void dilateErodeNoiseRemoval(cv::Mat& inputFrame, cv::Mat& outputFrame, int kern
  * this method uses calculates the length of the contours of the blobs in the input frame and uses those to remove noise.
  */
 void contourNoise(cv::Mat& inputFrameWithBlobs, cv::Mat& outputFrame, int contourThreshold);
+
+void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Point& focalPoint, int searchSpaceRadius = 100);
+void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Rect&  focalRect,  int searchSpaceRadius = 80);
+
+void toSearchSpace(SearchSpace& space, cv::Point& point);
+void toSearchSpace(SearchSpace& space, cv::Rect& rect);
+
+void fromSearchSpace(SearchSpace& space, cv::Point& point);
+void fromSearchSpace(SearchSpace& space, cv::Rect& rect);
+
+double getDistance(cv::Point& p1, cv::Point& p2);
+void rect(cv::Mat& mat, cv::Point point, int radius, cv::Scalar color, int thickness);

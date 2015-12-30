@@ -124,6 +124,7 @@ int run(cv::VideoCapture& cap, int fps) {
 	int skip = 0;
 	int calcSkip = 0;
 
+
 	for (;;) {
 		// debug time elapsed
 		auto start = std::chrono::high_resolution_clock::now();
@@ -143,7 +144,6 @@ int run(cv::VideoCapture& cap, int fps) {
 		frameWidth = frame.cols;
 		frameHeight = frame.rows;
 
-		
 		// on the very first frame we initialize the classes
 		if (frameIndex == 0) {
 			faceDetector.setVideoProperties(frameWidth, frameHeight);
@@ -215,6 +215,7 @@ int run(cv::VideoCapture& cap, int fps) {
 		if (frameIndex % 25 == 0) {
 			std::cout << "processing time: " << microseconds / 1000.0 << " ms" << std::endl;
 		}
+	
 
 		// prepare for next loop
 		cv::imshow("frame", frame);
@@ -227,7 +228,7 @@ int run(cv::VideoCapture& cap, int fps) {
 		}
 		else if (keystroke == 2424832) { // left arrow
 			if (waitTime < 100) {
-				return 0;
+				return -1;
 			}
 		}
 		else if (keystroke == 2555904) { // right arrow
@@ -235,18 +236,21 @@ int run(cv::VideoCapture& cap, int fps) {
 				return 1;
 			}
 		}
-		else if (keystroke == 32) {
+		else if (keystroke == 32) { // spacebar
 			waitTime = 1e6;
 		}
-		else if (keystroke == 13) {
+		else if (keystroke == 13) {  // return 
 			waitTime = 2;
 		}
-		else if (keystroke == 115) {
+		else if (keystroke == 115) { // s
 			skip = 750;
 			waitTime = 1e6;
 		}
-		else if (keystroke == 100) {
+		else if (keystroke == 100) { // d
 			calcSkip = 50;
+		}
+		else if (keystroke == 114) { // r
+			return 0;
 		}
 		else if (keystroke >= 0) {
 			std::cout << "key:" << keystroke << std::endl;
@@ -285,10 +289,14 @@ void manage(int movieIndex) {
 
 	if (value == 1)		  // next movie
 		newIndex += 1;
-	else if (value == 0)  // previous movie
+	else if (value == -1)  // previous movie
 		newIndex -= 1;
-	else				  // quit
-		return;
+	else if (value != 0) {
+		return;  // quit
+	}
+	// if 0, repeat movie
+
+	
 
 	// make sure the cycle of movies is from 0 to amountOfMovies
 	newIndex = newIndex % amountOfMovies;

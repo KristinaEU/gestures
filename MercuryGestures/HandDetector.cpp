@@ -118,7 +118,7 @@ void HandDetector::updateHandsFromTwoBlobs(BlobInformation& blob1, BlobInformati
 /*
 * We have N blobs, based on leftmost and rightmost we estimate the hand position
 */
-void HandDetector::updateHandsFromNBlobsLR(std::vector<BlobInformation>& blobs, bool ignoreIntersection) {
+void HandDetector::updateHandsFromNBlobsByPosition(std::vector<BlobInformation>& blobs, bool ignoreIntersection) {
 	int leftIndex = 0;
 	int rightIndex = 0;
 	for (int i = 0; i < blobs.size(); i++) {
@@ -137,7 +137,7 @@ void HandDetector::updateHandsFromNBlobsLR(std::vector<BlobInformation>& blobs, 
 /*
 * We have N blobs, based on position and edgecount we estimate the location of the hands
 */
-void HandDetector::updateHandsFromNBlobsOnBottom(std::vector<BlobInformation>& blobs, cv::Mat& edges) {
+void HandDetector::updateHandsFromNBlobsWithAnalysis(std::vector<BlobInformation>& blobs, cv::Mat& edges) {
 	std::vector<BlobEdgeData> allBlobs;
 	std::vector<BlobEdgeData> possibleHands;
 
@@ -180,10 +180,9 @@ void HandDetector::updateHandsFromNBlobsOnBottom(std::vector<BlobInformation>& b
 
 		// 2. if that did not work.. sort by position.
 		if (possibleHands.size() == 0) {
-			this->updateHandsFromNBlobsLR(blobs, true);
+			this->updateHandsFromNBlobsByPosition(blobs, true);
 		}
 	}
-
 
 	// We have some candidates for hands!
 	if (possibleHands.size() == 1) {
@@ -200,7 +199,7 @@ void HandDetector::updateHandsFromNBlobsOnBottom(std::vector<BlobInformation>& b
 		for (int i = 0; i < possibleHands.size(); i++) {
 			subset.push_back(blobs[possibleHands[i].index]);
 		}
-		this->updateHandsFromNBlobsLR(subset, true);
+		this->updateHandsFromNBlobsByPosition(subset, true);
 	}
 }
 
@@ -255,6 +254,9 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 		}
 	}
 
+	dilate(filledContours, filledContours);
+	erode(filledContours, filledContours);
+
 	// start seconds pass
 	contours.clear();
 	hierarchy.clear();
@@ -262,7 +264,10 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 
 	// mask to remove faces and other irrelevant blobs from the internal skinmask. Is trained over time.
 	cv::Mat highBlobsMask = cv::Mat::zeros(this->skinMask.rows, this->skinMask.cols, this->skinMask.type()); // all 0
-	
+	// create a mat for the edgemask.
+	cv::Mat edgeMask;
+	cv::Mat movementSkinMask;
+
 	// analyze all blobs
 	int rangeLeftX = this->frameWidth;
 	int rangeRightX = 0;
@@ -356,15 +361,20 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 	this->updateFaceMask(highBlobsMask);
 	cv::subtract(this->skinMask, this->faceMask, this->skinMask);
 
+	// use the updated skin mask to get the edges inside of the blobs
+	cv::bitwise_and(edges, this->skinMask, edgeMask);
+	cv::bitwise_or(this->skinMask, movementMap, movementSkinMask);
+	
 	// case 1: 1 blob in the lower segment.
 	if (lowerBodyBlobs.size() == 1) {
-		// if we have one is the lower segment and one in the middle segment, assume these are both hands.
-		
-
-		// if there is one in the lower range and one in the higher range, do we use it?
+		// if there is one in the lower range and one in the higher range
 		if (midBodyBlobs.size() == 1) { // todo: put back?
-			this->updateHandsFromTwoBlobs(lowerBodyBlobs[0], midBodyBlobs[0]);
+			std::vector<BlobInformation> blobContainer;
+			blobContainer.push_back(lowerBodyBlobs[0]);
+			blobContainer.push_back(midBodyBlobs[0]);
+			this->updateHandsFromNBlobsWithAnalysis(blobContainer, edges);
 		}
+		// if we have one is the lower segment and one in the middle segment, assume these are both hands.
 		else {
 			this->getBothHandPositionsFromBlob(lowerBodyBlobs[0]);
 		}
@@ -376,7 +386,7 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 	}
 	// case 3: more blobs in the lower segment.
 	else if (lowerBodyBlobs.size() > 2) {
-		this->updateHandsFromNBlobsOnBottom(lowerBodyBlobs, edges);
+		this->updateHandsFromNBlobsWithAnalysis(lowerBodyBlobs, edges);
 	}
 	// case 4: one blob in the middle segment
 	else if (midBodyBlobs.size() == 1) {
@@ -390,7 +400,7 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 	else if (midBodyBlobs.size() > 2) {
 		// case 1:
 		// hands on the side, something in between --> segment leftmost and rightmost?
-		this->updateHandsFromNBlobsLR(midBodyBlobs);
+		this->updateHandsFromNBlobsWithAnalysis(midBodyBlobs, edges);
 	}
 	// case 7: only one blob in the high segment (hands over face? no hands?)
 	else if (highBlobs.size() == 1) {
@@ -402,16 +412,20 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 	}
 	// case 9: multiple blobs in the higher segment	
 	else if (highBlobs.size() > 2) {
-		this->updateHandsFromNBlobsLR(highBlobs);
+		this->updateHandsFromNBlobsByPosition(highBlobs);
 	}
 
 	// solve for the hands
-	this->leftHand.solve( this->skinMask, blobs);
-	this->rightHand.solve(this->skinMask, blobs);
+	this->leftHand.solve( this->skinMask, blobs, movementMap);
+	this->rightHand.solve(this->skinMask, blobs, movementMap);
 
-	this->leftHand.handleIntersection(this->rightHand.position);
-	this->rightHand.handleIntersection(this->leftHand.position);
+	this->leftHand.handleIntersection(this->rightHand.position, this->skinMask);
+	this->rightHand.handleIntersection(this->leftHand.position, this->skinMask);
+
+	cv::imshow("movementMap", movementMap);
+	cv::imshow("movementSkinMask", movementSkinMask);
 }
+
 
 
 /*

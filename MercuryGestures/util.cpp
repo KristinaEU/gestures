@@ -35,6 +35,13 @@ std::string joinString(std::string a, int b) {
 }
 
 
+std::string joinString(std::string a, double b) {
+	std::ostringstream str;
+	str << a << b;
+	return str.str();
+}
+
+
 /**
  * this method is a preconfigured dilate call
  */
@@ -100,3 +107,40 @@ int rgbBound(int color) {
 	return std::min(255, std::max(0, color));
 }
 
+//TODO: explain
+void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Point& focalPoint, int searchSpaceRadius) {
+	empty.x = std::max(0, std::min(inputSpace.cols, focalPoint.x - searchSpaceRadius));
+	empty.y = std::max(0, std::min(inputSpace.rows, focalPoint.y - searchSpaceRadius));
+	int width = std::min(inputSpace.cols, empty.x + 2 * searchSpaceRadius) - empty.x;
+	int height = std::min(inputSpace.rows, empty.y + 2 * searchSpaceRadius) - empty.y;
+	cv::Rect searchRect(empty.x, empty.y, width, height);
+	empty.mat = inputSpace(searchRect);
+}
+void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Rect& focalRect, int searchSpaceRadius) {
+	empty.x = std::max(0, std::min(inputSpace.cols, focalRect.x - searchSpaceRadius));
+	empty.y = std::max(0, std::min(inputSpace.rows, focalRect.y - searchSpaceRadius));
+	int width = std::min(inputSpace.cols, focalRect.x + focalRect.width + searchSpaceRadius) - empty.x;
+	int height = std::min(inputSpace.rows, focalRect.y + focalRect.height + searchSpaceRadius) - empty.y;
+	cv::Rect searchRect(empty.x, empty.y, width, height);
+	empty.mat = inputSpace(searchRect);
+}
+
+void toSearchSpace(SearchSpace& space, cv::Point& point) {
+	point.x -= space.x;
+	point.y -= space.y;
+}
+
+void toSearchSpace(SearchSpace& space, cv::Rect& rect) {
+	rect.x -= space.x;
+	rect.y -= space.y;
+}
+
+void fromSearchSpace(SearchSpace& space, cv::Point& point) {
+	point.x += space.x;
+	point.y += space.y;
+}
+
+void fromSearchSpace(SearchSpace& space, cv::Rect& rect) {
+	rect.x += space.x;
+	rect.y += space.y;
+}

@@ -65,22 +65,14 @@ bool FaceDetector::detect(cv::Mat& gray) {
 	float movementThreshold = this->faceAreaThresholdFactor * this->frameWidth;
 
 	if (this->faceLocked) {
-		int searchSpaceRadius = 80;
-
-		int x = std::max(0, std::min(gray.cols, this->face.rect.x - searchSpaceRadius));
-		int y = std::max(0, std::min(gray.rows, this->face.rect.y - searchSpaceRadius));
-		int width = std::min(gray.cols, this->face.rect.x + this->face.rect.width + searchSpaceRadius) - x;
-		int height = std::min(gray.rows, this->face.rect.y + this->face.rect.height + searchSpaceRadius) - y;
-
-		cv::Rect searchRect(x, y, width, height);
-		cv::Mat searchSpace = gray(searchRect);
+		SearchSpace space;
+		getSearchSpace(space, gray, this->face.rect);
 
 		// detect the face in the grayscale image
-		bool detected = this->detectFace(searchSpace, newFaces);
+		bool detected = this->detectFace(space.mat, newFaces);
 		if (detected) {
 			// restore original coordinates
-			newFaces.rect.x += x;
-			newFaces.rect.y += y;
+			fromSearchSpace(space, newFaces.rect);
 		}
 		else {
 			// fallback
