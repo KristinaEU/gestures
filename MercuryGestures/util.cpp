@@ -144,3 +144,16 @@ void fromSearchSpace(SearchSpace& space, cv::Rect& rect) {
 	rect.x += space.x;
 	rect.y += space.y;
 }
+
+double getDistance(cv::Point& p1, cv::Point& p2) {
+	int dx = p1.x - p2.x;
+	int dy = p1.y - p2.y;
+	return std::sqrt(dx*dx + dy*dy);
+}
+
+void rect(cv::Mat& mat, cv::Point point, int radius, cv::Scalar color, int thickness) {
+#ifdef DEBUG
+	cv::Rect rect(point.x - radius, point.y - radius, 2 * radius, 2 * radius);
+	cv::rectangle(mat, rect, color, thickness);
+#endif
+}

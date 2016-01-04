@@ -44,7 +44,7 @@ void Hand::draw(cv::Mat& canvas) {
 	cv::putText(canvas, this->leftHand ? "L" : "R", this->position, 0, 0.8, this->color, 3);
 	
 #ifdef DEBUG
-	this->drawTrace(canvas, this->rawPositionHistory, this->positionIndex, 255, 50, 10);
+	//this->drawTrace(canvas, this->rawPositionHistory, this->positionIndex, 255, 50, 10);
 	if (this->leftHand) 
 		this->drawTrace(canvas, this->positionHistory, this->positionIndex, 0, 150, 255);
 	else
@@ -61,24 +61,30 @@ void Hand::drawTrace(cv::Mat& canvas, std::vector<cv::Point>& positions, int sta
 	int index = (startIndex + 1) % traceSize;
 
 	// get step colors 
-	double colorSteps = double(2 * traceSize);
+	double colorSteps = double(traceSize);
 	double rStep = r / colorSteps;
 	double gStep = g / colorSteps;
 	double bStep = b / colorSteps;
+	double m = 255 / colorSteps;
 
-	double rStart = rStep * (colorSteps - traceSize);
-	double gStart = gStep * (colorSteps - traceSize);
-	double bStart = bStep * (colorSteps - traceSize);
+	// mask for nice drawing (fade out effects)
+	cv::Mat traceMap = cv::Mat::zeros(canvas.rows, canvas.cols, canvas.type());
+	cv::Mat traceMask = cv::Mat::zeros(canvas.rows, canvas.cols, canvas.type());	
 
-	// for 5 steps, we need 4 lines.
+	// for n steps, we need n-1 lines.
 	for (int i = 0; i < traceSize - 1; i++) {
 		cv::Point p1 = positions[index];
 		index = (index + 1) % traceSize;
 		cv::Point p2 = positions[index];
 		if (p1.x != 0 && p1.y != 0 && p2.x != 0 && p2.y != 0) {
-			cv::line(canvas, p1, p2, CV_RGB(rStart + i * rStep, gStart + i * gStep, bStart + i * bStep), 2);
+			cv::line(traceMap, p1, p2, CV_RGB(i * rStep, i * gStep, i * bStep), 2, cv::LINE_AA);
+			cv::line(traceMask, p1, p2, CV_RGB(m*i, m*i, m*i), 2, cv::LINE_AA);
 		}
 	}
+
+	// apply mask and add line blended in
+	cv::subtract(canvas, traceMask, canvas);
+	cv::addWeighted(canvas, 1, traceMap, 1, 0, canvas);
 }
 
 /*
