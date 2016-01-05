@@ -7,7 +7,6 @@
 Hand::Hand() {
 	this->position = cv::Point(0, 0);
 	this->positionHistory.resize(historySize, cv::Point(0, 0));
-	this->rawPositionHistory.resize(historySize, cv::Point(0, 0));
 	this->blobHistory.resize(historySize);
 	this->color = CV_RGB(0, 255, 0);
 }
@@ -18,10 +17,18 @@ Hand::~Hand() {}
  * Set the estimated value based on the blob distribution. If this is a poor estimation, ignoreIntersection can be turned on.
  * When intersecting, the area search will prefer the estimate over the colliding result.
  */
-void Hand::setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIntersection) {
+void Hand::setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIntersection, Condition condition) {
 	if (blob.type == HIGH || ignoreIntersection == true) {
 		this->ignoreIntersect = true;
 	}
+
+	// if there is ONLY a head and the hand has not been above the threshold in the previous guess, we do not accept the blob position.
+	if (condition == ONLY_HEAD) {
+		if (this->position.y == 0 || this->position.y > faceCoverageThreshold) {
+			return;
+		}
+	}
+
 	this->blobEstimate = estimate;
 	this->blobIndex = this->getNextIndex(this->blobIndex);
 	this->blobHistory[this->blobIndex] = blob;
@@ -33,17 +40,19 @@ void Hand::setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIn
 * Draw the hand marker on the canvas
 */
 void Hand::draw(cv::Mat& canvas) {
-	cv::circle(canvas, this->position, 25, this->color, 2);
-	cv::putText(canvas, this->leftHand ? "L" : "R", this->position, 0, 0.8, this->color, 3);
-	
+	if (this->position.y == 0) {
+		cv::putText(canvas, this->leftHand ? "Left hand missing." : "Right hand missing.", this->leftHand ? cv::Point(20,30) : cv::Point(20, 60), 0, 1, this->color, 2);
+	}
+	else {
+		cv::circle(canvas, this->position, 25, this->color, 2);
+		cv::putText(canvas, this->leftHand ? "L" : "R", this->position, 0, 0.8, this->color, 3);
+
 #ifdef DEBUG
-	//this->drawTrace(canvas, this->rawPositionHistory, this->positionIndex, 255, 50, 10);
-	if (this->leftHand) 
-		this->drawTrace(canvas, this->positionHistory, this->positionIndex, 0, 150, 255);
-	else
-		this->drawTrace(canvas, this->positionHistory, this->positionIndex, 0, 255, 0);
-	cv::circle(*this->rgbSkinMask, this->position, 25, this->color, 2);
-	cv::putText(*this->rgbSkinMask, this->leftHand ? "L" : "R", this->position, 0, 0.8, this->color, 3);
+		if (this->leftHand)
+			this->drawTrace(canvas, this->positionHistory, this->positionIndex, 0, 150, 255);
+		else
+			this->drawTrace(canvas, this->positionHistory, this->positionIndex, 0, 255, 0);
+	}
 #endif
 }
 
@@ -105,31 +114,30 @@ void Hand::solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat
 			auto predictedPoint = this->getPredictedPosition(skinMask);
 			// if we have a predicted position, use that.
 			if (predictedPoint.x != 0 && predictedPoint.y != 0) {
-				//std::cout << (this->leftHand ? "LEFT HAND:" : "RIGHT HAND:") << "Using prediction" << std::endl;
 				this->improveByAreaSearch(skinMask, predictedPoint);
-			}
-			else {
-				//std::cout << (this->leftHand ? "LEFT HAND:" : "RIGHT HAND:") << "Not area searching" << std::endl;
 			}
 		}
 	}
 
-	// get a search mode based on the location of the blob
-	auto searchMode = this->getSearchModeFromBlobs(blobs);
+	
+	// we do not want to improve the position if it is not initialized.
+	if (this->position.x != 0 && this->position.y != 0) {
+		// get a search mode based on the location of the blob
+		auto searchMode = this->getSearchModeFromBlobs(blobs);
 
-	// find a good estimate
-	this->improveByCoverage(skinMask, searchMode);
+		// find a good estimate
+		this->improveByCoverage(skinMask, searchMode);
 
-	// check if we can use averaging to smooth the result.
-	this->improveUsingHistory(skinMask, movementMap);
+		// check if we can use averaging to smooth the result.
+		this->improveUsingHistory(skinMask, movementMap);
 
-	// store the position in the list
-	this->positionIndex = this->getNextIndex(this->positionIndex);
-	this->positionHistory[this->positionIndex] = this->position;
-	this->rawPositionHistory[this->positionIndex] = this->position;
+		// store the position in the list
+		this->positionIndex = this->getNextIndex(this->positionIndex);
+		this->positionHistory[this->positionIndex] = this->position;
 
-	// spline fit position history
-	this->updateLastPoint();
+		// spline fit position history
+		this->updateLastPoint();
+	}
 
 	// reset to clean state
 	this->estimateUpdated = false;
@@ -180,8 +188,6 @@ bool Hand::improveByAreaSearch(cv::Mat& skinMask, cv::Point& position) {
 * We get a position based on a linear extrapolation from the last point. 
 */
 cv::Point Hand::getPredictedPosition(cv::Mat& skinMask) {
-	
-
 	int p1_index = this->positionIndex;
 	int p2_index = this->getPreviousIndex(p1_index);
 	int p3_index = this->getPreviousIndex(p2_index);
@@ -332,29 +338,32 @@ void Hand::improveUsingHistory(cv::Mat& skinMask, cv::Mat& movementMap) {
 * This method will check if there is an intersection with the "other" hand. If so, move it to the side to total overlap is not attained.
 */
 void Hand::handleIntersection(cv::Point otherHandPosition, cv::Mat& skinMask) {
-	this->intersecting = false;
-	int minimalDistance = 8 * this->cmInPixels;
-	int dx = std::abs(this->position.x - otherHandPosition.x);
-	int dy = std::abs(this->position.y - otherHandPosition.y);
-
-	double distance = std::max(1.0,std::sqrt(dx*dx + dy*dy));
-
-	// if we're close we search for space away from the other hand and set intersecting to true
-	if (distance < minimalDistance) {
-		rect(*this->rgbSkinMask, this->position, 40, CV_RGB(10, 40, 255), 3);
-		this->intersecting = true;
-		this->improveByCoverage(skinMask, this->leftHand ? SEARCH_LEFT : SEARCH_RIGHT, 20);
-	}
-	// if we're only a little close, push a way gently
-	else if (distance < 2 * minimalDistance) {
-		rect(*this->rgbSkinMask, this->position, 40, CV_RGB(10, 40, 255), 1);
-		this->improveByCoverage(skinMask, this->leftHand ? SEARCH_LEFT : SEARCH_RIGHT, 5);
-	}
-
-	if (this->ignoreIntersect) {
+	// uninitialized intersections are not relevant.
+	if (this->position.x != 0 && this->position.y != 0 && otherHandPosition.x != 0 && otherHandPosition.y != 0) {
 		this->intersecting = false;
+		int minimalDistance = 8 * this->cmInPixels;
+		int dx = std::abs(this->position.x - otherHandPosition.x);
+		int dy = std::abs(this->position.y - otherHandPosition.y);
+
+		double distance = std::max(1.0, std::sqrt(dx*dx + dy*dy));
+
+		// if we're close we search for space away from the other hand and set intersecting to true
+		if (distance < minimalDistance) {
+			rect(*this->rgbSkinMask, this->position, 40, CV_RGB(10, 40, 255), 3);
+			this->intersecting = true;
+			this->improveByCoverage(skinMask, this->leftHand ? SEARCH_LEFT : SEARCH_RIGHT, 20);
+		}
+		// if we're only a little close, push a way gently
+		else if (distance < 2 * minimalDistance) {
+			rect(*this->rgbSkinMask, this->position, 40, CV_RGB(10, 40, 255), 1);
+			this->improveByCoverage(skinMask, this->leftHand ? SEARCH_LEFT : SEARCH_RIGHT, 5);
+		}
+
+		if (this->ignoreIntersect) {
+			this->intersecting = false;
+		}
+		this->ignoreIntersect = false;
 	}
-	this->ignoreIntersect = false;
 }
 
 
@@ -465,20 +474,6 @@ cv::Point Hand::lookAround(
 
 	// restore the transformation of the coordinates
 	fromSearchSpace(space, maxPos);
-
-#ifdef DEBUG
-	/*
-	if (searchMode == FREE_SEARCH) {
-		cv::circle(*this->rgbSkinMask, maxPos, radius, CV_RGB(255, 0, 0), 2);
-	}
-	else if (searchMode == SEARCH_DOWN) {
-		cv::circle(*this->rgbSkinMask, maxPos, radius, CV_RGB(0, 255, 0), 2);
-	}
-	else {
-		cv::circle(*this->rgbSkinMask, maxPos, radius, CV_RGB(0, 0, 255), 2);
-	}
-	*/
-#endif
 
 	// return best position
 	return maxPos;

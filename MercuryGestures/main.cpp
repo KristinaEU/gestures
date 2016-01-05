@@ -229,7 +229,7 @@ void manage(int movieIndex) {
 }
 
 int main(int argc, char *argv[]) {
-	manage(6);
+	manage(4);
 
 	return 0;
 }

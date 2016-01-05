@@ -17,6 +17,11 @@ enum BlobType {
 	OTHER
 };
 
+enum Condition {
+	NONE,
+	ONLY_HEAD
+};
+
 struct BlobEdgeData {
 	int index;
 	int edgeCount;
@@ -45,6 +50,7 @@ public:
 	bool intersecting = false;
 	bool ignoreIntersect = false;
 	bool leftHand = false;
+	int faceCoverageThreshold = 100;
 
 	double cmInPixels;
 	int positionIndex = 0;
@@ -52,7 +58,6 @@ public:
 	int fps = 25;
 
 	std::vector<cv::Point> positionHistory;
-	std::vector<cv::Point> rawPositionHistory;
 	std::vector<BlobInformation> blobHistory;
 
 	int historySize = 50;
@@ -61,7 +66,7 @@ public:
 	~Hand();
 
 	void handleIntersection(cv::Point otherHandPosition, cv::Mat& skinMask);
-	void setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIntersection = false);
+	void setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIntersection = false, Condition condition = NONE);
 	void solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat& movementMap);
 	bool improveByAreaSearch(cv::Mat& skinMask, cv::Point& position);
 	SearchMode getSearchModeFromBlobs(std::vector<BlobInformation>& blobs);
@@ -126,7 +131,7 @@ public:
 private:
 	double getFactor(BlobInformation& blob, double upperBound = 0.5);
 	void getHandEstimateFromBlob(BlobInformation& blob, Hand& handPosition, bool ignoreIntersection = false);
-	void getBothHandPositionsFromBlob(BlobInformation& blob, bool ignoreIntersection = false);
+	void getBothHandPositionsFromBlob(BlobInformation& blob, bool ignoreIntersection = false, Condition condition = NONE);
 	void updateFaceMask(cv::Mat& highBlobsMask);
 	void updateHandsFromTwoBlobs(BlobInformation& blob1, BlobInformation& blob2, bool ignoreIntersection = false);
 	void updateHandsFromNBlobsByPosition(std::vector<BlobInformation>& blobs, bool ignoreIntersection = false);

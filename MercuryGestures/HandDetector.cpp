@@ -81,6 +81,10 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 	int bottomFace = face.y + face.height;
 	int lowerBodyHalf = 0.6 * bottomFace + 0.4 * this->frameHeight;
 
+	// give the bottom face information to the hands.
+	this->leftHand.faceCoverageThreshold = 0.6 * bottomFace + 0.4 * this->frameHeight;;
+	this->rightHand.faceCoverageThreshold = 0.4 * bottomFace + 0.6 * this->frameHeight;;
+
 #ifdef DEBUG
 	cv::cvtColor(this->skinMask, this->rgbSkinMask, CV_GRAY2RGB);
 	int leftX = centerX - 50 * cmInPixels;
@@ -261,7 +265,7 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 	}
 	// case 7: only one blob in the high segment (hands over face? no hands?)
 	else if (highBlobs.size() == 1) {
-		this->getBothHandPositionsFromBlob(highBlobs[0]);
+		this->getBothHandPositionsFromBlob(highBlobs[0], false, ONLY_HEAD);
 	}
 	// case 8: two blobs in the high segment. (one hand over face?)
 	else if (highBlobs.size() == 2) {
@@ -278,8 +282,6 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 
 	this->leftHand.handleIntersection(this->rightHand.position, this->skinMask);
 	this->rightHand.handleIntersection(this->leftHand.position, this->skinMask);
-
-	//cv::imshow("movementSkinMask", movementSkinMask);
 }
 
 
@@ -353,10 +355,11 @@ void HandDetector::getHandEstimateFromBlob(BlobInformation& blob, Hand& hand, bo
 }
 
 
+
 /*
 * Here we provide a blob that we think contains two hands.  We will try to get a decent estimate of the position here.
 */
-void HandDetector::getBothHandPositionsFromBlob(BlobInformation& blob, bool ignoreIntersection) {
+void HandDetector::getBothHandPositionsFromBlob(BlobInformation& blob, bool ignoreIntersection, Condition condition) {
 	auto leftEstimate = blob.center;
 	auto rightEstimate = blob.center;
 
@@ -369,8 +372,8 @@ void HandDetector::getBothHandPositionsFromBlob(BlobInformation& blob, bool igno
 	leftEstimate.y = factor * blob.bottom.y + (1 - factor) * leftEstimate.y;
 	rightEstimate.y = factor * blob.bottom.y + (1 - factor) * rightEstimate.y;
 
-	this->leftHand.setEstimate(leftEstimate, blob, ignoreIntersection);
-	this->rightHand.setEstimate(rightEstimate, blob, ignoreIntersection);
+	this->leftHand.setEstimate(leftEstimate, blob, ignoreIntersection, condition);
+	this->rightHand.setEstimate(rightEstimate, blob, ignoreIntersection, condition);
 
 	//cv::circle(this->rgbSkinMask, blob.center, 5, CV_RGB(255, 0, 0), 5);
 }
