@@ -20,8 +20,8 @@ void EdgeDetector::detect(cv::Mat frame) {
 	cv::Canny(this->blur, this->detectedEdges, lowThreshold, lowThreshold*ratio, kernel_size);
 }
 
-void EdgeDetector::draw() {
-	cv::imshow("edges", this->detectedEdges);
+void EdgeDetector::show(std::string windowName) {
+	cv::imshow(windowName, this->detectedEdges);
 }
 
 cv::Mat EdgeDetector::getEdges() {

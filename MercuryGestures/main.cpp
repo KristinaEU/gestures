@@ -6,93 +6,9 @@
 #include "SkinDetector.h"
 #include "HandDetector.h"
 
-
-/**
-* This fills a body rect object
+/*
+* Run the algorithm on this video feed
 */
-void getBodyRect(cv::Rect &detectedFace, BodyRects &body) {
-	// the detected face is more or less a square, we will correct the proportions
-	body.face = cv::Rect(
-		(0.5 * detectedFace.width * (1 - faceWidthToHeightRatio)) + detectedFace.x, // shift rect to correct for decrease in width
-		detectedFace.y,
-		detectedFace.width * faceWidthToHeightRatio, // correct the width to match human face proportions
-		detectedFace.height
-		);
-
-	// we use the inverted value to avoid the multiple divisions in the block below.
-	double pixelSizeInCmInv = body.face.height / averageFaceHeight;
-
-	// based on http://i1201.photobucket.com/albums/bb342/Nantchev/Human_proportions_by_BenTs_sTock_zps3aa64481.jpg
-	double armWidth = 15 * pixelSizeInCmInv; // wider than normal arms. If we want to mark an importance area this can be used
-	double armUpperHeight = 35 * pixelSizeInCmInv;
-	double armLowerHeight = 35 * pixelSizeInCmInv;
-	double torsoWidth = 25 * pixelSizeInCmInv;
-	double torsoHeight = 55 * pixelSizeInCmInv;
-	double lapHeight = 50 * pixelSizeInCmInv; // to the end of the frame
-	double neckHeight = 3 * pixelSizeInCmInv; // smaller than a neck would be because people may look down a bit
-
-	body.upperTorso = cv::Rect(
-		(body.face.x + 0.5 * body.face.width) - 0.5 * torsoWidth,
-		body.face.y + body.face.height + neckHeight,
-		torsoWidth,
-		torsoHeight * 0.6
-		);
-	body.lowerTorso = cv::Rect(
-		(body.face.x + 0.5 * body.face.width) - 0.5 * torsoWidth,
-		body.face.y + body.face.height + neckHeight + torsoHeight * 0.6,
-		torsoWidth,
-		torsoHeight * 0.4
-		);
-	body.lap = cv::Rect(
-		(body.face.x + 0.5 * body.face.width) - 0.5 * torsoWidth - armWidth,
-		body.face.y + body.face.height + neckHeight + torsoHeight,
-		torsoWidth + 2 * armWidth,
-		lapHeight
-		);
-	body.armLeftUpper = cv::Rect(
-		(body.face.x + 0.5 * body.face.width) - 0.5 * torsoWidth - armWidth,
-		body.face.y + body.face.height,
-		armWidth,
-		armUpperHeight
-		);
-	body.armLeftLower = cv::Rect(
-		(body.face.x + 0.5 * body.face.width) - 0.5 * torsoWidth - armWidth,
-		body.face.y + body.face.height + armUpperHeight,
-		armWidth,
-		armLowerHeight
-		);
-	body.armRightUpper = cv::Rect(
-		(body.face.x + 0.5 * body.face.width) + 0.5 * torsoWidth,
-		body.face.y + body.face.height,
-		armWidth,
-		armUpperHeight
-		);
-	body.armRightLower = cv::Rect(
-		(body.face.x + 0.5 * body.face.width) + 0.5 * torsoWidth,
-		body.face.y + body.face.height + armUpperHeight,
-		armWidth,
-		armLowerHeight
-		);
-}
-/**
-* using the detected face, we draw the expected positions of the user's body. This can be expanded to generate a mask for the
-* regions of interest.
-*
-* @return the pixel size in centimeters
-*/
-void drawBodyRects(BodyRects &body, cv::Mat &frame) {
-	// draw the rects
-	cv::rectangle(frame, body.face, CV_RGB(0, 0, 250));
-	cv::rectangle(frame, body.upperTorso, CV_RGB(0, 0, 255));
-	cv::rectangle(frame, body.lowerTorso, CV_RGB(0, 0, 255));
-	cv::rectangle(frame, body.lap, CV_RGB(0, 255, 0));
-	cv::rectangle(frame, body.armLeftUpper, CV_RGB(255, 0, 0));
-	cv::rectangle(frame, body.armLeftLower, CV_RGB(255, 0, 0));
-	cv::rectangle(frame, body.armRightUpper, CV_RGB(255, 0, 0));
-	cv::rectangle(frame, body.armRightLower, CV_RGB(255, 0, 0));
-}
-
-
 int run(cv::VideoCapture& cap, int fps) {
 	// init the classes
 	
@@ -100,6 +16,7 @@ int run(cv::VideoCapture& cap, int fps) {
 	EdgeDetector  edgeDetector;
 	HandDetector  handDetector(fps);
 	MovementDetector movementDetector(fps);
+	MovementDetector maskedMovementDetector(fps);
 	ActivityGraph activityGraph(fps);
 	FaceDetector  faceDetector(fps);
 	if (faceDetector.setup() == false)
@@ -124,6 +41,8 @@ int run(cv::VideoCapture& cap, int fps) {
 	int skip = 0;
 	int calcSkip = 0;
 
+	activityGraph.addChannel("movement", CV_RGB(255, 0, 0));
+	activityGraph.addChannel("maskedMovement", CV_RGB(0, 255, 0), 0.0);
 
 	for (;;) {
 		// debug time elapsed
@@ -176,25 +95,27 @@ int run(cv::VideoCapture& cap, int fps) {
 			edgeDetector.detect(gray);
 			
 			if (initialized) {
-				movementDetector.normalizationFactor = faceDetector.normalizationFactor;
 				movementDetector.detect(gray, grayPrev);
+				movementDetector.calculate(faceDetector.normalizationFactor);
+
+				maskedMovementDetector.detect(gray, grayPrev);
+				maskedMovementDetector.mask(skinDetector.getMergedMap());
+				maskedMovementDetector.calculate(faceDetector.normalizationFactor);
+
 				handDetector.detect(*face, skinDetector.skinMask, movementDetector.movementMap, edgeDetector.detectedEdges, pixelSizeInCm);
-
-				//skinDetector.draw();
-				//edgeDetector.draw();
 				handDetector.draw(frame);
-		
-				// draw the graph (optional);
-				/*
-				activityGraph.draw(
-					movementDetector.value,
-					movementDetector.filteredValue,
-					movementDetector.movementMap,
-					frame
-				);
-				*/
-			}
 
+				// draw the graph (optional);
+				// activityGraph.setValue("movement", movementDetector.value);
+				// activityGraph.setValue("maskedMovement", maskedMovementDetector.value);
+				// activityGraph.draw(frame);
+				
+				//movementDetector.show("originalMovement");
+				//maskedMovementDetector.show("maskedSkinMovement");
+				//skinDetector.show();
+				//edgeDetector.show();
+				handDetector.show();
+			}
 			initialized = true;
 		}
 

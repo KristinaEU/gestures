@@ -56,6 +56,8 @@ double getAverage(std::vector<double> data);
  */
 std::string joinString(std::string a, std::string b);
 std::string joinString(std::string a, int b);
+std::string joinString(std::string a, double b);
+std::string joinString(int a, std::string b);
 
 /**
  * this method is a preconfigured dilate call

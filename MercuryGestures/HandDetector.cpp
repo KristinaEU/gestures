@@ -3,6 +3,7 @@
 #include "HandDetector.h"
 
 
+/************************************  UTIL  *********************************************/
 
 /*
 * Get the amount of edges inside of a blob as an integer
@@ -32,6 +33,7 @@ BlobEdgeData getEdgeData(BlobInformation& blob, cv::Mat& edges) {
 	return data;
 }
 
+/************************************ /UTIL  *********************************************/
 
 
 /*
@@ -52,157 +54,12 @@ HandDetector::~HandDetector() {}
 
 
 /*
- * This will return a factor between 0 and upperbound based on the height of the blob. A tall blob ( >= 25cm ) will give a value closer to upperbound.
- * This is a linear curve starting from 0 at 10cm to upperbound at 25cm length.
- */
-double HandDetector::getFactor(BlobInformation& blob, double upperBound) {
-	double diff = blob.bottom.y - blob.top.y;
-	double a10cm = 10 * this->cmInPixels;
-	double a25cm = 25 * this->cmInPixels;
-	return std::min(upperBound, std::max(0.0, upperBound*((diff - a10cm) / (a25cm - a10cm))));
-}
-
-
-/*
-* Here we provide a blob that we think contains a hand. We will try to get a decent estimate of the position here.
-* The tracking is done inside the hand object.
+* Get the amount of edges inside of a blob as an integer
 */
-void HandDetector::getHandEstimateFromBlob(BlobInformation& blob, Hand& hand, bool ignoreIntersection) {
-	// if the blob is long, we pull the hand estimates towards the lowest point.
-	double factor = getFactor(blob, 0.5);
-	cv::Point estimate;
-	estimate.x = factor * blob.bottom.x + (1 - factor) * blob.center.x;
-	estimate.y = factor * blob.bottom.y + (1 - factor) * blob.center.y;
-	hand.setEstimate(estimate, blob, ignoreIntersection);
+void HandDetector::setVideoProperties(int frameWidth, int frameHeight) {
+	this->frameHeight = frameHeight;
+	this->frameWidth = frameWidth;
 }
-
-
-/*
-* Here we provide a blob that we think contains two hands.  We will try to get a decent estimate of the position here.
-*/
-void HandDetector::getBothHandPositionsFromBlob(BlobInformation& blob, bool ignoreIntersection) {
-	auto leftEstimate = blob.center;
-	auto rightEstimate = blob.center;
-
-	leftEstimate.x = blob.center.x - 7.5 * this->cmInPixels;
-	rightEstimate.x = blob.center.x + 7.5 * this->cmInPixels;
-
-	// if the blob is long, we pull the hand estimates towards the lowest point.
-	double factor = getFactor(blob, 0.5);
-
-	leftEstimate.y = factor * blob.bottom.y + (1 - factor) * leftEstimate.y;
-	rightEstimate.y = factor * blob.bottom.y + (1 - factor) * rightEstimate.y;
-
-	this->leftHand.setEstimate(leftEstimate, blob, ignoreIntersection);
-	this->rightHand.setEstimate(rightEstimate, blob, ignoreIntersection);
-
-	//cv::circle(this->rgbSkinMask, blob.center, 5, CV_RGB(255, 0, 0), 5);
-}
-
-
-/*
- * We have 2 blobs, based on left and right we estimate the hand position.
- */
-void HandDetector::updateHandsFromTwoBlobs(BlobInformation& blob1, BlobInformation& blob2, bool ignoreIntersection) {
-	if (blob1.center.x < blob2.center.x) {
-		this->getHandEstimateFromBlob(blob1, this->leftHand, ignoreIntersection);
-		this->getHandEstimateFromBlob(blob2, this->rightHand, ignoreIntersection);
-	}
-	else {
-		this->getHandEstimateFromBlob(blob1, this->rightHand, ignoreIntersection);
-		this->getHandEstimateFromBlob(blob2, this->leftHand, ignoreIntersection);
-	}
-}
-
-
-/*
-* We have N blobs, based on leftmost and rightmost we estimate the hand position
-*/
-void HandDetector::updateHandsFromNBlobsByPosition(std::vector<BlobInformation>& blobs, bool ignoreIntersection) {
-	int leftIndex = 0;
-	int rightIndex = 0;
-	for (int i = 0; i < blobs.size(); i++) {
-		if (blobs[leftIndex].center.x > blobs[i].center.x) {
-			leftIndex = i;
-		}
-		if (blobs[rightIndex].center.x < blobs[i].center.x) {
-			rightIndex = i;
-		}
-	}
-
-	this->getHandEstimateFromBlob(blobs[leftIndex], this->leftHand, ignoreIntersection);
-	this->getHandEstimateFromBlob(blobs[rightIndex], this->rightHand, ignoreIntersection);
-}
-
-/*
-* We have N blobs, based on position and edgecount we estimate the location of the hands
-*/
-void HandDetector::updateHandsFromNBlobsWithAnalysis(std::vector<BlobInformation>& blobs, cv::Mat& edges) {
-	std::vector<BlobEdgeData> allBlobs;
-	std::vector<BlobEdgeData> possibleHands;
-
-
-	int maxEdgeCount = 0;
-	int handEdgeThreshold = 200; // we assume a hand has at least some edges due to fingers, nails, shadows etc.
-	double averageSize = 0;
-
-	// get the data (size & edgecount) for all blobs.
-	for (int i = 0; i < blobs.size(); i++) {
-		BlobEdgeData data = getEdgeData(blobs[i], edges);
-		data.index = i;
-		averageSize += data.size;
-		maxEdgeCount = std::max(maxEdgeCount, data.edgeCount);
-
-		if (data.edgeCount > handEdgeThreshold) {
-			possibleHands.push_back(data);
-		}
-
-		allBlobs.push_back(data);
-	}
-	averageSize /= blobs.size();
-
-
-	// no blob has enough edges to be a hand.
-	if (possibleHands.size() == 0) {
-		// 1. some much bigger than others?
-		double varSize = 0;
-		for (int i = 0; i < allBlobs.size(); i++) {
-			varSize += std::pow(allBlobs[i].size - averageSize, 2);
-		}
-		double stdSize = std::sqrt(varSize);
-
-		// get a new list of possible blobs based on the size.
-		for (int i = 0; i < allBlobs.size(); i++) {
-			if (allBlobs[i].size - averageSize > 0.5 * stdSize) {
-				possibleHands.push_back(allBlobs[i]);
-			}
-		}
-
-		// 2. if that did not work.. sort by position.
-		if (possibleHands.size() == 0) {
-			this->updateHandsFromNBlobsByPosition(blobs, true);
-		}
-	}
-
-	// We have some candidates for hands!
-	if (possibleHands.size() == 1) {
-		this->getBothHandPositionsFromBlob(blobs[possibleHands[0].index], true);
-	}
-	else if (possibleHands.size() == 2) {
-		// this could be a decent estimate so we disable the ignoreIntersection.
-		// TODO: maybe give a score for these blobs?
-		this->updateHandsFromTwoBlobs(blobs[possibleHands[0].index], blobs[possibleHands[1].index], false);
-	}
-	else if (possibleHands.size() > 2) {
-		// fall back to sorting by position.
-		std::vector<BlobInformation> subset;
-		for (int i = 0; i < possibleHands.size(); i++) {
-			subset.push_back(blobs[possibleHands[i].index]);
-		}
-		this->updateHandsFromNBlobsByPosition(subset, true);
-	}
-}
-
 
 
 /*
@@ -422,8 +279,7 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 	this->leftHand.handleIntersection(this->rightHand.position, this->skinMask);
 	this->rightHand.handleIntersection(this->leftHand.position, this->skinMask);
 
-	cv::imshow("movementMap", movementMap);
-	cv::imshow("movementSkinMask", movementSkinMask);
+	//cv::imshow("movementSkinMask", movementSkinMask);
 }
 
 
@@ -458,19 +314,167 @@ void HandDetector::updateFaceMask(cv::Mat& highBlobsMask) {
 void HandDetector::draw(cv::Mat& canvas) {
 	this->leftHand.draw(canvas);
 	this->rightHand.draw(canvas);
+}
 
-#ifdef DEBUG
-	cv::imshow("skinMaskFromHands", this->rgbSkinMask);
-	cv::imshow("skinMask", this->skinMask);
-#endif
+// show the debug map
+void HandDetector::show(std::string windowName) {
+	cv::imshow(windowName, this->rgbSkinMask);
+}
+
+
+
+
+//***************************************** PRIVATE  **********************************************//
+
+
+/*
+* This will return a factor between 0 and upperbound based on the height of the blob. A tall blob ( >= 25cm ) will give a value closer to upperbound.
+* This is a linear curve starting from 0 at 10cm to upperbound at 25cm length.
+*/
+double HandDetector::getFactor(BlobInformation& blob, double upperBound) {
+	double diff = blob.bottom.y - blob.top.y;
+	double a10cm = 10 * this->cmInPixels;
+	double a25cm = 25 * this->cmInPixels;
+	return std::min(upperBound, std::max(0.0, upperBound*((diff - a10cm) / (a25cm - a10cm))));
 }
 
 
 /*
-* Get the amount of edges inside of a blob as an integer
+* Here we provide a blob that we think contains a hand. We will try to get a decent estimate of the position here.
+* The tracking is done inside the hand object.
 */
-void HandDetector::setVideoProperties(int frameWidth, int frameHeight) {
-	this->frameHeight = frameHeight;
-	this->frameWidth = frameWidth;
+void HandDetector::getHandEstimateFromBlob(BlobInformation& blob, Hand& hand, bool ignoreIntersection) {
+	// if the blob is long, we pull the hand estimates towards the lowest point.
+	double factor = getFactor(blob, 0.5);
+	cv::Point estimate;
+	estimate.x = factor * blob.bottom.x + (1 - factor) * blob.center.x;
+	estimate.y = factor * blob.bottom.y + (1 - factor) * blob.center.y;
+	hand.setEstimate(estimate, blob, ignoreIntersection);
 }
 
+
+/*
+* Here we provide a blob that we think contains two hands.  We will try to get a decent estimate of the position here.
+*/
+void HandDetector::getBothHandPositionsFromBlob(BlobInformation& blob, bool ignoreIntersection) {
+	auto leftEstimate = blob.center;
+	auto rightEstimate = blob.center;
+
+	leftEstimate.x = blob.center.x + 7.5 * this->cmInPixels;
+	rightEstimate.x = blob.center.x - 7.5 * this->cmInPixels;
+
+	// if the blob is long, we pull the hand estimates towards the lowest point.
+	double factor = getFactor(blob, 0.5);
+
+	leftEstimate.y = factor * blob.bottom.y + (1 - factor) * leftEstimate.y;
+	rightEstimate.y = factor * blob.bottom.y + (1 - factor) * rightEstimate.y;
+
+	this->leftHand.setEstimate(leftEstimate, blob, ignoreIntersection);
+	this->rightHand.setEstimate(rightEstimate, blob, ignoreIntersection);
+
+	//cv::circle(this->rgbSkinMask, blob.center, 5, CV_RGB(255, 0, 0), 5);
+}
+
+
+/*
+* We have 2 blobs, based on left and right we estimate the hand position.
+*/
+void HandDetector::updateHandsFromTwoBlobs(BlobInformation& blob1, BlobInformation& blob2, bool ignoreIntersection) {
+	if (blob1.center.x < blob2.center.x) {
+		this->getHandEstimateFromBlob(blob1, this->rightHand, ignoreIntersection);
+		this->getHandEstimateFromBlob(blob2, this->leftHand, ignoreIntersection);
+	}
+	else {
+		this->getHandEstimateFromBlob(blob1, this->leftHand, ignoreIntersection);
+		this->getHandEstimateFromBlob(blob2, this->rightHand, ignoreIntersection);
+	}
+}
+
+
+/*
+* We have N blobs, based on leftmost and rightmost we estimate the hand position
+*/
+void HandDetector::updateHandsFromNBlobsByPosition(std::vector<BlobInformation>& blobs, bool ignoreIntersection) {
+	int leftIndex = 0;
+	int rightIndex = 0;
+	for (int i = 0; i < blobs.size(); i++) {
+		if (blobs[leftIndex].center.x < blobs[i].center.x) {
+			leftIndex = i;
+		}
+		if (blobs[rightIndex].center.x > blobs[i].center.x) {
+			rightIndex = i;
+		}
+	}
+
+	this->getHandEstimateFromBlob(blobs[leftIndex], this->leftHand, ignoreIntersection);
+	this->getHandEstimateFromBlob(blobs[rightIndex], this->rightHand, ignoreIntersection);
+}
+
+/*
+* We have N blobs, based on position and edgecount we estimate the location of the hands
+*/
+void HandDetector::updateHandsFromNBlobsWithAnalysis(std::vector<BlobInformation>& blobs, cv::Mat& edges) {
+	std::vector<BlobEdgeData> allBlobs;
+	std::vector<BlobEdgeData> possibleHands;
+
+
+	int maxEdgeCount = 0;
+	int handEdgeThreshold = 200; // we assume a hand has at least some edges due to fingers, nails, shadows etc.
+	double averageSize = 0;
+
+	// get the data (size & edgecount) for all blobs.
+	for (int i = 0; i < blobs.size(); i++) {
+		BlobEdgeData data = getEdgeData(blobs[i], edges);
+		data.index = i;
+		averageSize += data.size;
+		maxEdgeCount = std::max(maxEdgeCount, data.edgeCount);
+
+		if (data.edgeCount > handEdgeThreshold) {
+			possibleHands.push_back(data);
+		}
+
+		allBlobs.push_back(data);
+	}
+	averageSize /= blobs.size();
+
+
+	// no blob has enough edges to be a hand.
+	if (possibleHands.size() == 0) {
+		// 1. some much bigger than others?
+		double varSize = 0;
+		for (int i = 0; i < allBlobs.size(); i++) {
+			varSize += std::pow(allBlobs[i].size - averageSize, 2);
+		}
+		double stdSize = std::sqrt(varSize);
+
+		// get a new list of possible blobs based on the size.
+		for (int i = 0; i < allBlobs.size(); i++) {
+			if (allBlobs[i].size - averageSize > 0.5 * stdSize) {
+				possibleHands.push_back(allBlobs[i]);
+			}
+		}
+
+		// 2. if that did not work.. sort by position.
+		if (possibleHands.size() == 0) {
+			this->updateHandsFromNBlobsByPosition(blobs, true);
+		}
+	}
+
+	// We have some candidates for hands!
+	if (possibleHands.size() == 1) {
+		this->getBothHandPositionsFromBlob(blobs[possibleHands[0].index], true);
+	}
+	else if (possibleHands.size() == 2) {
+		// this could be a decent estimate so we disable the ignoreIntersection.
+		// TODO: maybe give a score for these blobs?
+		this->updateHandsFromTwoBlobs(blobs[possibleHands[0].index], blobs[possibleHands[1].index], false);
+	}
+	else if (possibleHands.size() > 2) {
+		// fall back to sorting by position.
+		std::vector<BlobInformation> subset;
+		for (int i = 0; i < possibleHands.size(); i++) {
+			subset.push_back(blobs[possibleHands[i].index]);
+		}
+		this->updateHandsFromNBlobsByPosition(subset, true);
+	}
+}

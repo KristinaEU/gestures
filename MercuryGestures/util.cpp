@@ -42,6 +42,13 @@ std::string joinString(std::string a, double b) {
 }
 
 
+std::string joinString(int a, std::string b) {
+	std::ostringstream str;
+	str << a << b;
+	return str.str();
+}
+
+
 /**
  * this method is a preconfigured dilate call
  */

@@ -10,6 +10,6 @@ public:
 	~EdgeDetector();
 
 	void detect(cv::Mat frame);
-	void draw();
+	void show(std::string windowName = "edges");
 	cv::Mat getEdges();
 };

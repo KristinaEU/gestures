@@ -12,10 +12,13 @@ public:
 	double maxMovement = 25000.0; // todo: determine this?
 	double value;
 	double filteredValue;
-	double normalizationFactor = 1;
 
 	MovementDetector(int fps);
 	~MovementDetector();
 
 	void detect(cv::Mat& gray, cv::Mat& grayPrev);
+	void mask(cv::Mat& mask);
+	void calculate(double normalizationFactor);
+	void show(std::string windowName = "movementMap");
+	void draw(cv::Mat& canvas);
 };

@@ -34,6 +34,9 @@ cv::Scalar SkinDetector::getAverageAreaColor(cv::Rect&area, cv::Mat& frame, bool
 * The aim is to find the hands and/or arms.
 */
 void SkinDetector::detect(cv::Rect& face, cv::Mat& frame, bool refine, int noiseRemovalThreshold) {
+	// keep track of the previous mask
+	this->skinMask.copyTo(this->previousSkinMask);
+	
 	cv::Mat mask;
 	cv::cvtColor(frame, mask, cv::COLOR_BGR2YCrCb);
 
@@ -51,6 +54,17 @@ void SkinDetector::detect(cv::Rect& face, cv::Mat& frame, bool refine, int noise
 	cv::inRange(mask, cv::Scalar(Y_MIN, Cr_MIN, Cb_MIN), cv::Scalar(Y_MAX, Cr_MAX, Cb_MAX), this->skinMask);
 }
 
-void SkinDetector::draw() {
-	cv::imshow("skinMask", this->skinMask);
+cv::Mat SkinDetector::getMergedMap() {
+	if (this->previousSkinMask.cols == this->skinMask.cols) {
+		cv::Mat mergedMap;
+		cv::bitwise_or(this->skinMask, this->previousSkinMask, mergedMap);
+		return mergedMap;
+	}
+	else {
+		return this->skinMask;
+	}
+}
+
+void SkinDetector::show(std::string windowName) {
+	cv::imshow(windowName, this->skinMask);
 }

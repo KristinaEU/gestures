@@ -2,11 +2,6 @@
 #include "MercuryCore.h"
 #include "HandDetector.h"
 
-/************************************  UTIL  *********************************************/
-
-
-
-/************************************ /UTIL  *********************************************/
 
 // Basic constructor, initializing all variables
 Hand::Hand() {
@@ -32,8 +27,6 @@ void Hand::setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIn
 	this->blobHistory[this->blobIndex] = blob;
 	this->estimateUpdated = true;
 }
-
-
 
 
 /*
@@ -403,7 +396,8 @@ cv::Point Hand::lookAround(
 	int iteration = 0;
 	for (int i = 0; i < maxIterations; i++) {
 		iteration++;
-		if (searchMode == SEARCH_LEFT) {
+		// WHEN SEARCH_RIGHT IS ON, WE SEARCH ON THE LEFT SIDE OF THE SCREEN -> RIGHT FOR THE PERSON
+		if (searchMode == SEARCH_RIGHT) {
 			newValues.push_back(this->shiftPosition(space.mat, newPositions, maxPos, -stepSize, stepSize, radius));
 			newValues.push_back(this->shiftPosition(space.mat, newPositions, maxPos, -stepSize, -stepSize, radius));
 			newValues.push_back(this->shiftPosition(space.mat, newPositions, maxPos, -stepSize, 0, radius));
@@ -411,7 +405,8 @@ cv::Point Hand::lookAround(
 			newValues.push_back(this->shiftPosition(space.mat, newPositions, maxPos, 0, stepSize, radius));
 			newValues.push_back(this->shiftPosition(space.mat, newPositions, maxPos, 0, -stepSize, radius));
 		}
-		else if (searchMode == SEARCH_RIGHT) {
+		// WHEN SEARCH_LEFT IS ON, WE SEARCH ON THE RIGHT SIDE OF THE SCREEN -> LEFT FOR THE PERSON
+		else if (searchMode == SEARCH_LEFT) {
 			newValues.push_back(this->shiftPosition(space.mat, newPositions, maxPos, stepSize, stepSize,  radius));
 			newValues.push_back(this->shiftPosition(space.mat, newPositions, maxPos, stepSize, -stepSize, radius));
 			newValues.push_back(this->shiftPosition(space.mat, newPositions, maxPos, stepSize, 0,			radius));

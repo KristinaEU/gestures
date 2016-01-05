@@ -116,17 +116,21 @@ public:
 
 	HandDetector(int fps);
 	~HandDetector();
-
+	
+	void detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm);
+	void draw(cv::Mat& canvas);
+	void show(std::string windowName = "debugMapHands");
+	void setVideoProperties(int frameWidth, int frameHeight);
+	
+	
+private:
+	double getFactor(BlobInformation& blob, double upperBound = 0.5);
+	void getHandEstimateFromBlob(BlobInformation& blob, Hand& handPosition, bool ignoreIntersection = false);
+	void getBothHandPositionsFromBlob(BlobInformation& blob, bool ignoreIntersection = false);
 	void updateFaceMask(cv::Mat& highBlobsMask);
 	void updateHandsFromTwoBlobs(BlobInformation& blob1, BlobInformation& blob2, bool ignoreIntersection = false);
 	void updateHandsFromNBlobsByPosition(std::vector<BlobInformation>& blobs, bool ignoreIntersection = false);
 	void updateHandsFromNBlobsWithAnalysis(std::vector<BlobInformation>& blobs, cv::Mat& edges);
-	void detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm);
-	void draw(cv::Mat& canvas);
-	double getFactor(BlobInformation& blob, double upperBound = 0.5);
-	void setVideoProperties(int frameWidth, int frameHeight);
-	void getHandEstimateFromBlob(BlobInformation& blob, Hand& handPosition, bool ignoreIntersection = false);
-	void getBothHandPositionsFromBlob(BlobInformation& blob, bool ignoreIntersection = false);
 };
 
 double getDistance(cv::Point& p1, cv::Point& p2);

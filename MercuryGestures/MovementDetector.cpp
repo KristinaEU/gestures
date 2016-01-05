@@ -22,13 +22,27 @@ void MovementDetector::detect(cv::Mat& gray, cv::Mat& grayPrev) {
 	// get the amount of movement in this frame
 	cv::absdiff(gray, grayPrev, diff);
 	cv::threshold(diff, this->movementMap, 25, 255, 0);
+}
 
-	
-	this->value = std::min(this->maxMovement, std::max(0.0, (cv::sum(this->movementMap)[0] / 255.0) * this->normalizationFactor)) / maxMovement;
-	
+void MovementDetector::mask(cv::Mat& mask) {
+	cv::bitwise_and(this->movementMap, mask, this->movementMap);
+}
+
+
+void MovementDetector::calculate(double normalizationFactor) {
+	this->value = std::min(this->maxMovement, std::max(0.0, (cv::sum(this->movementMap)[0] / 255.0) * normalizationFactor)) / maxMovement;
+
 	values[this->index%this->fps] = this->value;
-	
+
 	this->filteredValue = getAverage(values);
 
 	this->index++;
+}
+
+void MovementDetector::show(std::string windowName) {
+	cv::imshow(windowName, this->movementMap);
+}
+
+void MovementDetector::draw(cv::Mat& canvas) {
+	cv::add(canvas, this->movementMap, canvas);
 }
