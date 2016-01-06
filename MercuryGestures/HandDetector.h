@@ -70,7 +70,7 @@ public:
 	void solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat& movementMap);
 	bool improveByAreaSearch(cv::Mat& skinMask, cv::Point& position);
 	SearchMode getSearchModeFromBlobs(std::vector<BlobInformation>& blobs);
-	void improveByCoverage(cv::Mat& skinMask, SearchMode searchMode, int maxIterations = 20);
+	void improveByCoverage(cv::Mat& skinMask, SearchMode searchMode, int maxIterations, int colorBase = 255);
 	void improveUsingHistory(cv::Mat& skinMask, cv::Mat& movementMap);
 	void draw(cv::Mat& canvas);
 	void drawTrace(cv::Mat& canvas, std::vector<cv::Point>& positions, int startIndex, int r, int g, int b);
@@ -84,15 +84,15 @@ private:
 	double getPointQuality(cv::Point& point, cv::Mat& skinMask, int radius = 0);
 	cv::Point lookAround(cv::Point start,
 		cv::Mat& skinMask,
-		int maxIterations = 40,
-		int stepSize = 1,
-		int radius = 5, // in cm
-		SearchMode searchMode = FREE_SEARCH,
+		int maxIterations,
+		int stepSize,
+		int radius, // in cm
+		SearchMode searchMode,
 		int colorBase = 255
 		);
 	double shiftPosition(
 		cv::Mat& skinMask,
-		std::vector<cv::Point>& newPositions,
+		cv::Point& newPosition,
 		cv::Point& basePosition,
 		int xOffset,
 		int yOffset,

@@ -37,7 +37,7 @@ int run(cv::VideoCapture& cap, int fps) {
 	
 
 	// DEBUG
-	int waitTime = 2;
+	int waitTime = 2e9;
 	int skip = 0;
 	int calcSkip = 0;
 
@@ -57,7 +57,7 @@ int run(cv::VideoCapture& cap, int fps) {
 		int frameHeight = rawFrame.rows;
 
 		// resize image
-		float resizeFactor = frameHeightMax / double(frameHeight);
+		double resizeFactor = frameHeightMax / double(frameHeight);
 		cv::Size size(std::round(frameWidth * resizeFactor), frameHeightMax);
 		cv::resize(rawFrame, frame, size); 
 		frameWidth = frame.cols;
@@ -86,12 +86,7 @@ int run(cv::VideoCapture& cap, int fps) {
 		double pixelSizeInCm = faceDetector.getScale();
 		if (faceDetected) {
 			auto face = &(faceDetector.face.rect);
-
 			skinDetector.detect(*face, frame, initialized, (3.0 / pixelSizeInCm) * 4);
-			
-			//getBodyRect(*face, body);
-			//drawBodyRects(body, frame);
-
 			edgeDetector.detect(gray);
 			
 			if (initialized) {
@@ -229,7 +224,6 @@ void manage(int movieIndex) {
 }
 
 int main(int argc, char *argv[]) {
-	manage(4);
-
+	manage(6);
 	return 0;
 }

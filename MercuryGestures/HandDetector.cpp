@@ -179,7 +179,7 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 			}
 			// the lowest point is below the chest line and the highest below the chin line
 			else if (lowestPoint.y > lowerBodyHalf && highestPoint.y > bottomFace) { 
-				color = CV_RGB(255, 200, 50); // orange
+				color = CV_RGB(255, 100, 50); // orange
 				midBodyBlobs.push_back(blob);
 				blob.type = MEDIUM;
 			}
@@ -420,7 +420,6 @@ void HandDetector::updateHandsFromNBlobsWithAnalysis(std::vector<BlobInformation
 	std::vector<BlobEdgeData> allBlobs;
 	std::vector<BlobEdgeData> possibleHands;
 
-
 	int maxEdgeCount = 0;
 	int handEdgeThreshold = 200; // we assume a hand has at least some edges due to fingers, nails, shadows etc.
 	double averageSize = 0;
@@ -452,7 +451,7 @@ void HandDetector::updateHandsFromNBlobsWithAnalysis(std::vector<BlobInformation
 
 		// get a new list of possible blobs based on the size.
 		for (int i = 0; i < allBlobs.size(); i++) {
-			if (allBlobs[i].size - averageSize > 0.5 * stdSize) {
+			if (allBlobs[i].size - averageSize > stdSize) {
 				possibleHands.push_back(allBlobs[i]);
 			}
 		}
