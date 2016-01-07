@@ -92,7 +92,9 @@ int run(cv::VideoCapture& cap, int fps) {
 				movementDetector.mask(skinDetector.getMergedMap());
 				movementDetector.calculate(faceDetector.normalizationFactor);
 
-				handDetector.detect(*face,
+				handDetector.detect(
+					gray, grayPrev,
+					*face,
 					skinDetector.skinMask,
 					movementDetector.movementMap,
 					edgeDetector.detectedEdges,

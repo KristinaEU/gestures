@@ -33,6 +33,7 @@ struct SearchSpace {
 	cv::Mat mat;
 	int x;
 	int y;
+	cv::Rect area;
 };
 
 /*
@@ -87,6 +88,7 @@ void toSearchSpace(SearchSpace& space, cv::Rect& rect);
 
 void fromSearchSpace(SearchSpace& space, cv::Point& point);
 void fromSearchSpace(SearchSpace& space, cv::Rect& rect);
+void fromSearchSpace(SearchSpace& space, cv::Point2f& point);
 
 double getDistance(cv::Point& p1, cv::Point& p2);
 void rect(cv::Mat& mat, cv::Point point, int radius, cv::Scalar color, int thickness);

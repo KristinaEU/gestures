@@ -66,7 +66,7 @@ void HandDetector::setVideoProperties(int frameWidth, int frameHeight) {
 * This is the detector entree point. It does too much at the moment so it is in need of seperation. We get the blobs, filter them on size,
 * segment them, judge them, forward them to the specific analysers
 */
-void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm) {
+void HandDetector::detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm) {
 	skinMask.copyTo(this->skinMask);
 	
 	// get an estimate for the center based on the face.
@@ -277,8 +277,8 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 	}
 
 	// solve for the hands
-	this->leftHand.solve( this->skinMask, blobs, movementMap);
-	this->rightHand.solve(this->skinMask, blobs, movementMap);
+	this->leftHand.solve( gray, grayPrev, this->skinMask, blobs, movementMap);
+	this->rightHand.solve(gray, grayPrev, this->skinMask, blobs, movementMap);
 
 	// handle possible intersections of the hands
 	this->handleIntersections();

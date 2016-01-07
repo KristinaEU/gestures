@@ -45,6 +45,7 @@ void Hand::draw(cv::Mat& canvas) {
 		cv::putText(canvas, this->leftHand ? "Left hand missing." : "Right hand missing.", this->leftHand ? cv::Point(20,30) : cv::Point(20, 60), 0, 1, this->color, 2);
 	}
 	else {
+		
 		cv::circle(canvas, this->position, 25, this->color, 2);
 		cv::circle(*this->rgbSkinMask, this->position, 25, this->color, 2);
 		cv::putText(canvas, this->leftHand ? "L" : "R", this->position, 0, 0.8, this->color, 3);
@@ -54,8 +55,21 @@ void Hand::draw(cv::Mat& canvas) {
 			this->drawTrace(canvas, this->positionHistory, this->positionIndex, 0, 150, 255);
 		else
 			this->drawTrace(canvas, this->positionHistory, this->positionIndex, 0, 255, 0);
-	}
 #endif
+		if (this->opticalFlowPoint.x != 0) {
+			cv::circle(canvas, this->opticalFlowPoint, 25, CV_RGB(255, 0, 0), 2);
+		
+		for (int i = 0; i < this->opticalFlowPointsPrev.size(); i++) {
+			if (this->opticalFlowStatus[i] == 1) {
+				if (this->opticalFlowSuccess[i]) 
+					cv::line(canvas, this->opticalFlowPointsPrev[i], this->opticalFlowPoints[i], CV_RGB(0, 255, 0), 1);
+				else 
+					cv::line(canvas, this->opticalFlowPointsPrev[i], this->opticalFlowPoints[i], CV_RGB(255, 0, 0), 1);
+			}
+		}
+		}
+	}
+
 }
 
 void Hand::drawTrace(cv::Mat& canvas, std::vector<cv::Point>& positions, int startIndex, int r, int g, int b) {
@@ -100,15 +114,19 @@ void Hand::drawTrace(cv::Mat& canvas, std::vector<cv::Point>& positions, int sta
 	- Refine the result by averaging over time, if matched we will use this to smooth out the movement.
 *
 */
-void Hand::solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat& movementMap) {
-	//std::cout << (this->leftHand ? "LEFT HAND:" : "RIGHT HAND:") << "--------------- solve -----------" << std::endl;
+void Hand::solve(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat& movementMap) {
 	// if the estimate has been updated, update the position. If the improvement algorithms fail, this is the fallback
 	if (this->estimateUpdated == true) {
 		this->position = this->blobEstimate;
 	}
-	
-	// search for a position based on the last known position
+
+	// search for a position based on optical flow
 	auto lastPosition = this->positionHistory[this->positionIndex]; // still the last one since we have not yet found the final pos.
+	if (lastPosition.x != 0 && lastPosition.y != 0) {
+		this->getEstimateByOpticalFlow(gray, grayPrev, lastPosition);
+	}
+	
+	// revert to search for a position based on the last known position
 	if (lastPosition.x != 0 && lastPosition.y != 0 && this->intersecting == false) {
 		bool areaSearched = this->improveByAreaSearch(skinMask, lastPosition);
 		// if we did not search because of fast moving objects, we try again with a predicted position.
@@ -120,6 +138,9 @@ void Hand::solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat
 				this->improveByAreaSearch(skinMask, predictedPoint);
 			}
 		}
+	}
+	else if (this->opticalFlowPoint.x != 0 && this->opticalFlowPoint.y != 0 && this->intersecting == false) {
+		this->position = 0.5* (this->opticalFlowPoint + this->position);
 	}
 
 	// reset intersection state
@@ -156,6 +177,91 @@ void Hand::finalize(cv::Mat& skinMask, cv::Mat& movementMap) {
 	this->estimateUpdated = false;
 }
 
+void Hand::getEstimateByOpticalFlow(cv::Mat& gray, cv::Mat& grayPrev, cv::Point& lastPosition) {
+	this->opticalFlowPoint = cv::Point(0, 0);
+	this->opticalFlowPointsPrev.clear();
+	this->opticalFlowSuccess.clear();
+	this->opticalFlowPoints.clear();
+
+	SearchSpace space;
+	getSearchSpace(space, grayPrev, lastPosition, 60);
+	cv::Mat graySearchSpace = gray(space.area);
+	toSearchSpace(space, lastPosition);
+
+	int amount = 6;
+	int spacing = 2*this->cmInPixels;
+	for (int i = 0; i < amount; i++) {
+		for (int j = 0; j < amount; j++) {
+			this->opticalFlowSuccess.push_back(false);
+			this->opticalFlowPointsPrev.push_back(
+				cv::Point(lastPosition.x - (amount / 2) * spacing + spacing * i,
+					lastPosition.y - (amount / 2) * spacing + spacing * j
+					)
+				);
+		}
+	}
+
+	fromSearchSpace(space, lastPosition);
+
+	// Find position of feature in new image
+	cv::calcOpticalFlowPyrLK(
+		space.mat, graySearchSpace, // 2 consecutive images
+		this->opticalFlowPointsPrev, // input point positions in first im
+		this->opticalFlowPoints, // output point positions in the 2nd
+		this->opticalFlowStatus,    // tracking success
+		this->opticalFlowErr      // tracking error
+	);
+
+	for (int i = 0; i < this->opticalFlowPointsPrev.size(); i++) {
+		fromSearchSpace(space, this->opticalFlowPointsPrev[i]);
+		fromSearchSpace(space, this->opticalFlowPoints[i]);
+	}
+
+	// get estimate of averages
+	double dxAverage = 0;
+	double dyAverage = 0;
+	int count = 0;
+	for (int i = 0; i < this->opticalFlowPointsPrev.size(); i++) {
+		if (this->opticalFlowStatus[i] == 1) {
+			dxAverage += this->opticalFlowPoints[i].x - this->opticalFlowPointsPrev[i].x;
+			dyAverage += this->opticalFlowPoints[i].y - this->opticalFlowPointsPrev[i].y;
+			count++;
+		}
+	}
+	if (count == 0) 
+		return;
+	
+	dxAverage /= count;
+	dyAverage /= count;
+
+	// filter outliers
+	double dxCleanAverage = 0;
+	double dyCleanAverage = 0;
+	count = 0;
+	for (int i = 0; i < this->opticalFlowPointsPrev.size(); i++) {
+		if (this->opticalFlowStatus[i] == 1) {
+			double dx = this->opticalFlowPoints[i].x - this->opticalFlowPointsPrev[i].x;
+			double dy = this->opticalFlowPoints[i].y - this->opticalFlowPointsPrev[i].y;
+			double dxDiff = std::abs(dxAverage - dx) / dxAverage;
+			double dyDiff = std::abs(dyAverage - dy) / dyAverage;
+			if (dxDiff < 0.15 && dxDiff < 0.15) {
+				this->opticalFlowSuccess[i] = true;
+				dxCleanAverage += dx;
+				dyCleanAverage += dy;
+				count++;
+			}
+		}
+	}
+	if (count == 0)
+		return;
+
+	dxCleanAverage = int(dxCleanAverage / count);
+	dyCleanAverage = int(dyCleanAverage / count);
+
+	cv::Point pos(lastPosition.x + dxCleanAverage, lastPosition.y + dyCleanAverage);
+	this->opticalFlowPoint = pos;
+}
+
 void Hand::updateLastPoint() {
 	int p0_index = this->positionIndex;
 	int p1_index = this->getPreviousIndex(p0_index);
@@ -190,7 +296,7 @@ bool Hand::improveByAreaSearch(cv::Mat& skinMask, cv::Point& position) {
 #endif
 		// We do a quality check to ensure that the point we are in is not crap. 
 		// If it is we need to ignore the search and get the estimate.
-		if (pointQuality > 0.2) {
+		if (pointQuality > 0.1) {
 			this->position = this->lookAround(position, skinMask, maxIterations, stepSize, radius, FREE_SEARCH, 50);
 			return true;
 		}
@@ -227,8 +333,8 @@ cv::Point Hand::getPredictedPosition(cv::Mat& skinMask) {
 	}
 
 
-	// if about 20% of the searchspace has been filled we accept the point
-	if (pointQuality > 0.2) {
+	// if about 10% of the searchspace has been filled we accept the point
+	if (pointQuality > 0.1) {
 #ifdef DEBUG
 		rect(*this->rgbSkinMask, predictedPosition, 10, CV_RGB(255, 0, 0), 5); // orange rect
 		cv::putText(*this->rgbSkinMask, joinString("q:", int(100 * pointQuality)), predictedPosition + cv::Point(10, 0), 0, 1, CV_RGB(255, 0, 10), 2);

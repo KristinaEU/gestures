@@ -122,6 +122,7 @@ void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Point& focalPoi
 	int height = std::min(inputSpace.rows, empty.y + 2 * searchSpaceRadius) - empty.y;
 	cv::Rect searchRect(empty.x, empty.y, width, height);
 	empty.mat = inputSpace(searchRect);
+	empty.area = searchRect;
 }
 void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Rect& focalRect, int searchSpaceRadius) {
 	empty.x = std::max(0, std::min(inputSpace.cols, focalRect.x - searchSpaceRadius));
@@ -130,6 +131,7 @@ void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Rect& focalRect
 	int height = std::min(inputSpace.rows, focalRect.y + focalRect.height + searchSpaceRadius) - empty.y;
 	cv::Rect searchRect(empty.x, empty.y, width, height);
 	empty.mat = inputSpace(searchRect);
+	empty.area = searchRect;
 }
 
 void toSearchSpace(SearchSpace& space, cv::Point& point) {
@@ -143,6 +145,10 @@ void toSearchSpace(SearchSpace& space, cv::Rect& rect) {
 }
 
 void fromSearchSpace(SearchSpace& space, cv::Point& point) {
+	point.x += space.x;
+	point.y += space.y;
+}
+void fromSearchSpace(SearchSpace& space, cv::Point2f& point) {
 	point.x += space.x;
 	point.y += space.y;
 }

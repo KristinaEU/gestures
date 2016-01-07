@@ -59,6 +59,13 @@ public:
 	int blobIndex = 0;
 	int fps = 25;
 
+	// optical flow items
+	std::vector<cv::Point2f> opticalFlowPointsPrev, opticalFlowPoints;
+	std::vector<uchar> opticalFlowStatus;
+	std::vector<bool> opticalFlowSuccess;
+	cv::Mat opticalFlowErr;
+	cv::Point opticalFlowPoint;
+
 	std::vector<cv::Point> positionHistory;
 	std::vector<BlobInformation> blobHistory;
 
@@ -67,13 +74,14 @@ public:
 	Hand();
 	~Hand();
 
+	void getEstimateByOpticalFlow(cv::Mat& gray, cv::Mat& grayPrev, cv::Point& lastPosition);
 	void finalize(cv::Mat& skinMask, cv::Mat& movementMap);
 	void setTrappedIntersection();
 	bool isIntersecting(cv::Point& otherHandPosition);
 	bool isClose(cv::Point& otherHandPosition, bool drawDebug = false);
 	void handleIntersection(cv::Point& otherHandPosition, cv::Mat& skinMask);
 	void setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIntersection = false, Condition condition = NONE);
-	void solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat& movementMap);
+	void solve(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat& movementMap);
 	bool improveByAreaSearch(cv::Mat& skinMask, cv::Point& position);
 	SearchMode getSearchModeFromBlobs(std::vector<BlobInformation>& blobs);
 	void improveByCoverage(cv::Mat& skinMask, SearchMode searchMode, int maxIterations, int colorBase = 255);
@@ -130,7 +138,7 @@ public:
 	HandDetector(int fps);
 	~HandDetector();
 	
-	void detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm);
+	void detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm);
 	void draw(cv::Mat& canvas);
 	void show(std::string windowName = "debugMapHands");
 	void setVideoProperties(int frameWidth, int frameHeight);
