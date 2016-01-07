@@ -112,6 +112,7 @@ void Hand::solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat
 	if (lastPosition.x != 0 && lastPosition.y != 0 && this->intersecting == false) {
 		bool areaSearched = this->improveByAreaSearch(skinMask, lastPosition);
 		// if we did not search because of fast moving objects, we try again with a predicted position.
+		auto predictedPoint = this->getPredictedPosition(skinMask);
 		if (!areaSearched) {
 			auto predictedPoint = this->getPredictedPosition(skinMask);
 			// if we have a predicted position, use that.
@@ -121,6 +122,8 @@ void Hand::solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat
 		}
 	}
 
+	// reset intersection state
+	this->intersecting = false;
 	
 	// we do not want to improve the position if it is not initialized.
 	if (this->position.x != 0 && this->position.y != 0) {
@@ -130,6 +133,14 @@ void Hand::solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat
 		// find a good estimate
 		this->improveByCoverage(skinMask, searchMode, 5);
 
+		// find a good estimate
+		this->improveByDirection(skinMask, searchMode, 20);
+	}
+}
+
+void Hand::finalize(cv::Mat& skinMask, cv::Mat& movementMap) {
+	// we do not want to improve the position if it is not initialized.
+	if (this->position.x != 0 && this->position.y != 0) {
 		// check if we can use averaging to smooth the result.
 		this->improveUsingHistory(skinMask, movementMap);
 
@@ -144,7 +155,6 @@ void Hand::solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat
 	// reset to clean state
 	this->estimateUpdated = false;
 }
-
 
 void Hand::updateLastPoint() {
 	int p0_index = this->positionIndex;
@@ -229,7 +239,7 @@ cv::Point Hand::getPredictedPosition(cv::Mat& skinMask) {
 	}
 	else {
 #ifdef DEBUG
-		rect(*this->rgbSkinMask, predictedPosition, 60, CV_RGB(255, 0, 0), 5); // orange rect
+		rect(*this->rgbSkinMask, predictedPosition, 60, CV_RGB(255, 0, 0), 5); // red rect
 		rect(*this->rgbSkinMask, predictedPosition, 10, CV_RGB(255, 0, 0), 5); // orange rect
 		cv::putText(*this->rgbSkinMask, joinString("q:", int(100 * pointQuality)), predictedPosition + cv::Point(10, 0), 0, 1, CV_RGB(255, 0, 10), 2);
 		rect(*this->rgbSkinMask, predictedPositionVelocity, 10, CV_RGB(0, 255, 0), 5); // orange rect
@@ -256,7 +266,7 @@ SearchMode Hand::getSearchModeFromBlobs(std::vector<BlobInformation>& blobs) {
 
 			int height = (blobs[i].bottom.y - blobs[i].top.y);
 
-			if (height < 15 * this->cmInPixels) { // height less than 15 cm --> normal search
+			if (height < 20 * this->cmInPixels) { // height less than 20 cm --> normal search
 				return FREE_SEARCH;
 			}
 			else {
@@ -283,12 +293,29 @@ SearchMode Hand::getSearchModeFromBlobs(std::vector<BlobInformation>& blobs) {
 
 
 /*
-* We use a small tracker to walk over the blob, 
-* hoping to optimize the area and to move over long blobs towards the likely position of the hand.
+* We use a reasonably sized tracker to walk over the blob, this should center the point in the blob.
 */
 void Hand::improveByCoverage(cv::Mat& skinMask, SearchMode searchMode, int maxIterations, int colorBase) {
 	int stepSize = 3;
-	int radius = 5 * this->cmInPixels; 
+	int radius = 8 * this->cmInPixels; 
+
+	// find the new best position
+	cv::Point maxPos = this->lookAround(this->position, skinMask, maxIterations, stepSize, radius, searchMode, colorBase);
+
+	// update position with improved one.
+	this->position = maxPos;
+}
+
+
+/*
+* We use a small sized tracker to walk over the blob towards the expected position of the hand.
+*/
+void Hand::improveByDirection(cv::Mat& skinMask, SearchMode searchMode, int maxIterations, int colorBase) {
+	if (searchMode == FREE_SEARCH)
+		return;
+
+	int stepSize = 3;
+	int radius = 2.5 * this->cmInPixels;
 
 	// find the new best position
 	cv::Point maxPos = this->lookAround(this->position, skinMask, maxIterations, stepSize, radius, searchMode, colorBase);
@@ -322,7 +349,6 @@ void Hand::improveUsingHistory(cv::Mat& skinMask, cv::Mat& movementMap) {
 	avgY /= historyAverage;
 
 	double movementCoverage = this->getPointQuality(this->position, movementMap, 30);
-	
 	// if the movement is very small, mostly copy over the average
 	if (movementCoverage < 0.001) {
 		this->position.x = 0.95 * avgX + 0.05 * this->position.x;
@@ -344,44 +370,64 @@ void Hand::improveUsingHistory(cv::Mat& skinMask, cv::Mat& movementMap) {
 }
 
 
+
+
 /*
 * This method will check if there is an intersection with the "other" hand. If so, move it to the side to total overlap is not attained.
 */
-void Hand::handleIntersection(cv::Point otherHandPosition, cv::Mat& skinMask) {
+bool Hand::isIntersecting(cv::Point& otherHandPosition) {
 	// uninitialized intersections are not relevant.
 	if (this->position.x != 0 && this->position.y != 0 && otherHandPosition.x != 0 && otherHandPosition.y != 0) {
-		this->intersecting = false;
-		int minimalDistance = 8 * this->cmInPixels;
-		int dx = std::abs(this->position.x - otherHandPosition.x);
-		int dy = std::abs(this->position.y - otherHandPosition.y);
+		int minimalDistance = 13 * this->cmInPixels;
+		double distance = getDistance(this->position, otherHandPosition);
+		// if we're close we search for space away from the other hand and set intersecting to true
+		if (distance < minimalDistance) {
+			return true;
+		}
+	}
+	return false;
+}
 
-		double distance = std::max(1.0, std::sqrt(dx*dx + dy*dy));
-
+/*
+* This method will check if there is an intersection with the "other" hand. If so, move it to the side to total overlap is not attained.
+*/
+bool Hand::isClose(cv::Point& otherHandPosition, bool drawDebug) {
+	// uninitialized intersections are not relevant.
+	if (this->position.x != 0 && this->position.y != 0 && otherHandPosition.x != 0 && otherHandPosition.y != 0) {
+		int minimalDistance = 15 * this->cmInPixels;
+		double distance = getDistance(this->position, otherHandPosition);
 		// if we're close we search for space away from the other hand and set intersecting to true
 		if (distance < minimalDistance) {
 #ifdef DEBUG
-			rect(*this->rgbSkinMask, this->position, 40, CV_RGB(10, 40, 255), 3);
-			cv::putText(*this->rgbSkinMask, "intersect ON, forcibly", this->position - cv::Point(80, 40), 0, 0.5, this->color);
+			if (drawDebug) {
+				rect(*this->rgbSkinMask, this->position, 40, this->color, 1);
+				cv::putText(*this->rgbSkinMask, "close", this->position - cv::Point(80, 40), 0, 0.5, this->color);
+			}
 #endif
-			this->intersecting = true;
-			this->improveByCoverage(skinMask, this->leftHand ? SEARCH_LEFT : SEARCH_RIGHT, 20, 100);
+			return true;
 		}
-		// if we're only a little close, push a way gently
-		else if (distance < 2 * minimalDistance) {
-#ifdef DEBUG
-			rect(*this->rgbSkinMask, this->position, 40, CV_RGB(10, 40, 255), 1);
-			cv::putText(*this->rgbSkinMask, "intersect detected, gently", this->position - cv::Point(100, 40), 0, 0.5, this->color);
-#endif
-			this->improveByCoverage(skinMask, this->leftHand ? SEARCH_LEFT : SEARCH_RIGHT, 5, 150);
-		}
-
-		if (this->ignoreIntersect) {
-			this->intersecting = false;
-		}
-		this->ignoreIntersect = false;
 	}
+	return false;
 }
 
+void Hand::handleIntersection(cv::Point& otherHandPosition, cv::Mat& skinMask) {
+	this->improveByDirection(skinMask, this->leftHand ? SEARCH_STRICT_LEFT : SEARCH_STRICT_RIGHT, 1, 255);
+}
+
+void Hand::setTrappedIntersection() {
+	this->intersecting = true;
+	if (this->ignoreIntersect) {
+		this->intersecting = false;
+	}
+	this->ignoreIntersect = false;
+
+#ifdef DEBUG
+	if (this->intersecting) {
+		rect(*this->rgbSkinMask, this->position, 40, CV_RGB(10, 40, 255), 3);
+		cv::putText(*this->rgbSkinMask, "intersect", this->position - cv::Point(80, 40), 0, 0.5, this->color);
+	}
+#endif
+}
 
 
 //***************************************** PRIVATE  **********************************************//
@@ -421,8 +467,12 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 	std::set<int> positionHistory;
 	for (int i = 0; i < maxIterations; i++) {
 
-		// WHEN SEARCH_RIGHT IS ON, WE SEARCH ON THE LEFT SIDE OF THE SCREEN -> RIGHT FOR THE PERSON
 		if (searchMode == SEARCH_RIGHT) {
+			// WHEN SEARCH_RIGHT IS ON, WE SEARCH ON THE LEFT SIDE OF THE SCREEN -> RIGHT FOR THE PERSON
+			// x x .
+			// x o .
+			// x x .
+
 			// also search up and down, just not right
 			newValues[0] = this->shiftPosition(space.mat, newPositions[0], maxPos, 0, stepSize, radius);
 			newValues[1] = this->shiftPosition(space.mat, newPositions[1], maxPos, 0, -stepSize, radius);
@@ -430,8 +480,41 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 			newValues[3] = this->shiftPosition(space.mat, newPositions[3], maxPos, -stepSize, -stepSize, radius);
 			newValues[4] = this->shiftPosition(space.mat, newPositions[4], maxPos, -stepSize, 0, radius);
 		}
-		// WHEN SEARCH_LEFT IS ON, WE SEARCH ON THE RIGHT SIDE OF THE SCREEN -> LEFT FOR THE PERSON
+		else if (searchMode == SEARCH_STRICT_RIGHT) {
+			// WHEN SEARCH_STRICT_RIGHT IS ON, WE SEARCH ON THE LEFT SIDE OF THE SCREEN -> RIGHT FOR THE PERSON
+			// . x . . .
+			// . x . . .
+			// . x o . .
+			// . x . . .
+			// . x . . .
+
+			newValues[0] = this->shiftPosition(space.mat, newPositions[0], maxPos, -stepSize, stepSize, radius);
+			newValues[1] = this->shiftPosition(space.mat, newPositions[1], maxPos, -stepSize, -stepSize, radius);
+			newValues[2] = this->shiftPosition(space.mat, newPositions[2], maxPos, -stepSize, 2 * -stepSize, radius);
+			newValues[3] = this->shiftPosition(space.mat, newPositions[3], maxPos, -stepSize, 2 * stepSize, radius);
+			newValues[4] = this->shiftPosition(space.mat, newPositions[4], maxPos, -stepSize, 0, radius);
+		}
+		else if (searchMode == SEARCH_STRICT_LEFT) {
+			// WHEN SEARCH_STRICT_LEFT IS ON, WE SEARCH ON THE RIGHT SIDE OF THE SCREEN -> LEFT FOR THE PERSON
+			// . . . x .
+			// . . . x .
+			// . . o x .
+			// . . . x .
+			// . . . x .
+
+			newValues[0] = this->shiftPosition(space.mat, newPositions[0], maxPos, stepSize, stepSize, radius);
+			newValues[1] = this->shiftPosition(space.mat, newPositions[1], maxPos, stepSize, -stepSize, radius);
+			newValues[2] = this->shiftPosition(space.mat, newPositions[2], maxPos, stepSize, 2 * -stepSize, radius);
+			newValues[3] = this->shiftPosition(space.mat, newPositions[3], maxPos, stepSize, 2 * stepSize, radius);
+			newValues[4] = this->shiftPosition(space.mat, newPositions[4], maxPos, stepSize, 0, radius);
+			
+		}
 		else if (searchMode == SEARCH_LEFT) {
+			// WHEN SEARCH_LEFT IS ON, WE SEARCH ON THE RIGHT SIDE OF THE SCREEN -> LEFT FOR THE PERSON
+			// . x x
+			// . o x
+			// . x x
+
 			// also search up and down, just not left
 			newValues[0] = this->shiftPosition(space.mat, newPositions[0], maxPos, 0, stepSize, radius);
 			newValues[1] = this->shiftPosition(space.mat, newPositions[1], maxPos, 0, -stepSize, radius);
@@ -440,6 +523,10 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 			newValues[4] = this->shiftPosition(space.mat, newPositions[4], maxPos, stepSize, 0, radius);
 		}
 		else if (searchMode == SEARCH_UP) {
+			// x x x
+			// x o x
+			// . . .
+
 			// allow left right
 			newValues[0] = this->shiftPosition(space.mat, newPositions[0], maxPos, -stepSize, 0, radius);
 			newValues[1] = this->shiftPosition(space.mat, newPositions[1], maxPos, stepSize, 0, radius);
@@ -448,6 +535,10 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 			newValues[4] = this->shiftPosition(space.mat, newPositions[4], maxPos, 0, -stepSize, radius);
 		}
 		else if (searchMode == SEARCH_DOWN) {
+			// . . .
+			// x o x
+			// x x x
+
 			// allow left right
 			newValues[0] = this->shiftPosition(space.mat, newPositions[0], maxPos, -stepSize, 0, radius);
 			newValues[1] = this->shiftPosition(space.mat, newPositions[1], maxPos, stepSize, 0, radius);
@@ -456,6 +547,10 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 			newValues[4] = this->shiftPosition(space.mat, newPositions[4], maxPos, 0, stepSize, radius);
 		}
 		else {// if (searchMode == FREE_SEARCH) {
+			  // x x x
+			  // x o x
+			  // x x x
+
 			newValues[0] = this->shiftPosition(space.mat, newPositions[0], maxPos, stepSize, stepSize, radius);
 			newValues[1] = this->shiftPosition(space.mat, newPositions[1], maxPos, stepSize, -stepSize, radius);
 			newValues[2] = this->shiftPosition(space.mat, newPositions[2], maxPos, stepSize, 0, radius);
@@ -482,10 +577,8 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 		if (newMax >= maxValue) {
 			maxValue = newMax;
 #ifdef DEBUG
-			if (this->leftHand) {
-				cv::Point drawPoint(maxPos.x + space.x, maxPos.y + space.y);
-				cv::circle(*this->rgbSkinMask, drawPoint, 2, CV_RGB(colorBase, 0, std::min(30 * i, 255)), 5);
-			}
+			cv::Point drawPoint(maxPos.x + space.x, maxPos.y + space.y);
+			cv::circle(*this->rgbSkinMask, drawPoint, 2, CV_RGB(colorBase, 0, std::min(30 * i, 255)), 5);
 #endif
 			maxPos = newPositions[maxIndex];
 			positionHistory.insert(maxPos.x * 1000 + maxPos.y);
@@ -497,7 +590,7 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 
 	// restore the transformation of the coordinates
 	fromSearchSpace(space, maxPos);
-
+#ifdef DEBUG
 	auto color = this->color;
 	if (colorBase < 150)
 		color = CV_RGB(100, 0, 100);
@@ -505,10 +598,17 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x - 40, maxPos.y), color, 2);
 		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x - 40, maxPos.y), 10, color, 2);
 	}
-	// WHEN SEARCH_LEFT IS ON, WE SEARCH ON THE RIGHT SIDE OF THE SCREEN -> LEFT FOR THE PERSON
+	else if (searchMode == SEARCH_STRICT_RIGHT) {
+		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x - 40, maxPos.y), color, 2);
+		rect(*this->rgbSkinMask, cv::Point(maxPos.x - 50, maxPos.y), 10, color, 2);
+	}
 	else if (searchMode == SEARCH_LEFT) {
 		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x + 40, maxPos.y), color, 2);
 		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x + 40, maxPos.y), 10, color, 2);
+	}
+	else if (searchMode == SEARCH_STRICT_LEFT) {
+		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x + 40, maxPos.y), color, 2);
+		rect(*this->rgbSkinMask, cv::Point(maxPos.x + 50, maxPos.y), 10, color, 2);
 	}
 	else if (searchMode == SEARCH_UP) {
 		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x, maxPos.y - 40), color, 2);
@@ -523,7 +623,7 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 		cv::line(*this->rgbSkinMask, cv::Point(maxPos.x - 40, maxPos.y), cv::Point(maxPos.x + 40, maxPos.y), color, 2);
 		cv::circle(*this->rgbSkinMask, maxPos, 10, color, 2);
 	}
-
+#endif
 	// return best position
 	return maxPos;
 }

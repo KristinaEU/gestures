@@ -66,8 +66,9 @@ bool FaceDetector::detect(cv::Mat& gray) {
 
 	if (this->faceLocked) {
 		SearchSpace space;
-		getSearchSpace(space, gray, this->face.rect);
+		getSearchSpace(space, gray, this->face.rect, 50);
 
+		
 		// detect the face in the grayscale image
 		bool detected = this->detectFace(space.mat, newFaces);
 		if (detected) {

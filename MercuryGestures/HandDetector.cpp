@@ -280,11 +280,60 @@ void HandDetector::detect(cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMa
 	this->leftHand.solve( this->skinMask, blobs, movementMap);
 	this->rightHand.solve(this->skinMask, blobs, movementMap);
 
-	this->leftHand.handleIntersection(this->rightHand.position, this->skinMask);
-	this->rightHand.handleIntersection(this->leftHand.position, this->skinMask);
+	// handle possible intersections of the hands
+	this->handleIntersections();
+
+	// finalize the position
+	this->leftHand.finalize( this->skinMask, movementMap);
+	this->rightHand.finalize(this->skinMask, movementMap);
 }
 
 
+/*
+* Get the amount of edges inside of a blob as an integer
+*/
+void HandDetector::draw(cv::Mat& canvas) {
+	this->leftHand.draw(canvas);
+	this->rightHand.draw(canvas);
+}
+
+// show the debug map
+void HandDetector::show(std::string windowName) {
+	cv::imshow(windowName, this->rgbSkinMask);
+	cv::imshow("handSkinMask", this->skinMask);
+}
+
+
+
+
+//***************************************** PRIVATE  **********************************************//
+
+
+
+void HandDetector::handleIntersections() {
+#ifdef DEBUG
+	this->leftHand.isClose(this->rightHand.position, true);
+	this->rightHand.isClose(this->leftHand.position, true);
+#endif
+
+	bool handCloseTogether = this->leftHand.isClose(this->rightHand.position);
+	int iterations = 0;
+	int recoveryIterations = 15;
+	while (handCloseTogether && iterations < recoveryIterations) {
+		// move to the side
+		this->leftHand.handleIntersection(this->rightHand.position, this->skinMask);
+		this->rightHand.handleIntersection(this->leftHand.position, this->skinMask);
+		
+		// check new state
+		handCloseTogether = this->leftHand.isClose(this->rightHand.position);
+
+		iterations++;
+	}
+	if (this->leftHand.isIntersecting(this->rightHand.position)) {
+		this->leftHand.setTrappedIntersection();
+		this->rightHand.setTrappedIntersection();
+	}
+}
 
 /*
 * Get the amount of edges inside of a blob as an integer
@@ -308,25 +357,6 @@ void HandDetector::updateFaceMask(cv::Mat& highBlobsMask) {
 		this->faceMaskAverageArea = 0.995 *  this->faceMaskAverageArea + 0.005 * highArea[0];
 	}
 }
-
-
-/*
-* Get the amount of edges inside of a blob as an integer
-*/
-void HandDetector::draw(cv::Mat& canvas) {
-	this->leftHand.draw(canvas);
-	this->rightHand.draw(canvas);
-}
-
-// show the debug map
-void HandDetector::show(std::string windowName) {
-	cv::imshow(windowName, this->rgbSkinMask);
-}
-
-
-
-
-//***************************************** PRIVATE  **********************************************//
 
 
 /*

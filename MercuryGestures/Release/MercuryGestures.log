@@ -1,21 +1,30 @@
 ﻿  Hand.cpp
-Hand.cpp(159): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(160): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(174): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(178): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(250): warning C4018: '<': signed/unsigned mismatch
-Hand.cpp(291): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(328): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(329): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(334): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(335): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(340): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(341): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(354): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-Hand.cpp(564): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(169): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(170): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(184): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(188): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(260): warning C4018: '<': signed/unsigned mismatch
+Hand.cpp(300): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(318): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(354): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(355): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(360): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(361): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(366): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(367): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(381): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(397): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(664): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+  main.cpp
+main.cpp(39): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+main.cpp(59): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+main.cpp(87): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+main.cpp(153): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+main.cpp(160): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+main.cpp(192): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
   Generating code
-  5 of 1147 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
+  2 of 1155 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+    4 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   MercuryGestures.vcxproj -> D:\Dropbox\Almende\Projects\C\mercury-gestures\MercuryGestures\Release\MercuryGestures.exe

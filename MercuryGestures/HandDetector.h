@@ -2,11 +2,13 @@
 #include "MercuryCore.h"
 
 enum SearchMode {
-	FREE_SEARCH, // 0
-	SEARCH_DOWN, // 1
-	SEARCH_LEFT, // 2
-	SEARCH_RIGHT,// 3
-	SEARCH_UP    // 4
+	FREE_SEARCH, 
+	SEARCH_DOWN, 
+	SEARCH_STRICT_LEFT, 
+	SEARCH_LEFT, 
+	SEARCH_STRICT_RIGHT,
+	SEARCH_RIGHT,
+	SEARCH_UP   
 };
 
 enum BlobType {
@@ -65,12 +67,17 @@ public:
 	Hand();
 	~Hand();
 
-	void handleIntersection(cv::Point otherHandPosition, cv::Mat& skinMask);
+	void finalize(cv::Mat& skinMask, cv::Mat& movementMap);
+	void setTrappedIntersection();
+	bool isIntersecting(cv::Point& otherHandPosition);
+	bool isClose(cv::Point& otherHandPosition, bool drawDebug = false);
+	void handleIntersection(cv::Point& otherHandPosition, cv::Mat& skinMask);
 	void setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIntersection = false, Condition condition = NONE);
 	void solve(cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat& movementMap);
 	bool improveByAreaSearch(cv::Mat& skinMask, cv::Point& position);
 	SearchMode getSearchModeFromBlobs(std::vector<BlobInformation>& blobs);
 	void improveByCoverage(cv::Mat& skinMask, SearchMode searchMode, int maxIterations, int colorBase = 255);
+	void improveByDirection(cv::Mat& skinMask, SearchMode searchMode, int maxIterations, int colorBase = 255);
 	void improveUsingHistory(cv::Mat& skinMask, cv::Mat& movementMap);
 	void draw(cv::Mat& canvas);
 	void drawTrace(cv::Mat& canvas, std::vector<cv::Point>& positions, int startIndex, int r, int g, int b);
@@ -99,6 +106,7 @@ private:
 		int radius
 	);
 	double getCoverage(cv::Point& pos, cv::Mat& skinMask, int radius);
+
 };
 
 class HandDetector {
@@ -126,8 +134,7 @@ public:
 	void draw(cv::Mat& canvas);
 	void show(std::string windowName = "debugMapHands");
 	void setVideoProperties(int frameWidth, int frameHeight);
-	
-	
+
 private:
 	double getFactor(BlobInformation& blob, double upperBound = 0.5);
 	void getHandEstimateFromBlob(BlobInformation& blob, Hand& handPosition, bool ignoreIntersection = false);
@@ -136,6 +143,7 @@ private:
 	void updateHandsFromTwoBlobs(BlobInformation& blob1, BlobInformation& blob2, bool ignoreIntersection = false);
 	void updateHandsFromNBlobsByPosition(std::vector<BlobInformation>& blobs, bool ignoreIntersection = false);
 	void updateHandsFromNBlobsWithAnalysis(std::vector<BlobInformation>& blobs, cv::Mat& edges);
+	void handleIntersections();
 };
 
 double getDistance(cv::Point& p1, cv::Point& p2);

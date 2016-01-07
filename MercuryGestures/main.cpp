@@ -16,7 +16,6 @@ int run(cv::VideoCapture& cap, int fps) {
 	EdgeDetector  edgeDetector;
 	HandDetector  handDetector(fps);
 	MovementDetector movementDetector(fps);
-	MovementDetector maskedMovementDetector(fps);
 	ActivityGraph activityGraph(fps);
 	FaceDetector  faceDetector(fps);
 	if (faceDetector.setup() == false)
@@ -37,11 +36,10 @@ int run(cv::VideoCapture& cap, int fps) {
 	
 
 	// DEBUG
-	int waitTime = 2e9;
+	int waitTime = 2;
 	int skip = 0;
 	int calcSkip = 0;
 
-	activityGraph.addChannel("movement", CV_RGB(255, 0, 0));
 	activityGraph.addChannel("maskedMovement", CV_RGB(0, 255, 0), 0.0);
 
 	for (;;) {
@@ -91,22 +89,22 @@ int run(cv::VideoCapture& cap, int fps) {
 			
 			if (initialized) {
 				movementDetector.detect(gray, grayPrev);
+				movementDetector.mask(skinDetector.getMergedMap());
 				movementDetector.calculate(faceDetector.normalizationFactor);
 
-				maskedMovementDetector.detect(gray, grayPrev);
-				maskedMovementDetector.mask(skinDetector.getMergedMap());
-				maskedMovementDetector.calculate(faceDetector.normalizationFactor);
-
-				handDetector.detect(*face, skinDetector.skinMask, movementDetector.movementMap, edgeDetector.detectedEdges, pixelSizeInCm);
+				handDetector.detect(*face,
+					skinDetector.skinMask,
+					movementDetector.movementMap,
+					edgeDetector.detectedEdges,
+					pixelSizeInCm
+				);
 				handDetector.draw(frame);
 
 				// draw the graph (optional);
-				// activityGraph.setValue("movement", movementDetector.value);
 				// activityGraph.setValue("maskedMovement", maskedMovementDetector.value);
 				// activityGraph.draw(frame);
 				
-				//movementDetector.show("originalMovement");
-				//maskedMovementDetector.show("maskedSkinMovement");
+				movementDetector.show("maskedSkinMovement");
 				//skinDetector.show();
 				//edgeDetector.show();
 				handDetector.show();
@@ -127,14 +125,13 @@ int run(cv::VideoCapture& cap, int fps) {
 
 		// debug time elapsed
 		auto elapsed = std::chrono::high_resolution_clock::now() - start;
-		long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-		if (frameIndex % 25 == 0) {
-			std::cout << "processing time: " << microseconds / 1000.0 << " ms" << std::endl;
-		}
-	
+		double duration = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / 1000.0;
 
 		// prepare for next loop
+		cv::putText(frame, joinString("f:", frameIndex), cv::Point(frameWidth - 110, 30), 0, 1, CV_RGB(255, 0, 0), 2);
+		cv::putText(frame, joinString(joinString("t:", duration)," ms"), cv::Point(frameWidth - 110, 50), 0, 0.5, CV_RGB(255, 0, 0), 1);
 		cv::imshow("frame", frame);
+
 		int keystroke = cv::waitKey(waitTime);
 		
 		if (keystroke == 27) {
@@ -173,7 +170,6 @@ int run(cv::VideoCapture& cap, int fps) {
 		}
 
 		frameIndex += 1;
-		//std::cout << frameIndex << std::endl;
 	}
 
 	// the camera will be deinitialized automatically in VideoCapture destructor
