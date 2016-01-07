@@ -595,33 +595,33 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 	if (colorBase < 150)
 		color = CV_RGB(100, 0, 100);
 	if (searchMode == SEARCH_RIGHT) {
-		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x - 40, maxPos.y), color, 2);
-		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x - 40, maxPos.y), 10, color, 2);
+		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x - 40, maxPos.y), color, 1);
+		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x - 40, maxPos.y), 10, color, 1);
 	}
 	else if (searchMode == SEARCH_STRICT_RIGHT) {
-		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x - 40, maxPos.y), color, 2);
-		rect(*this->rgbSkinMask, cv::Point(maxPos.x - 50, maxPos.y), 10, color, 2);
+		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x - 40, maxPos.y), color, 1);
+		rect(*this->rgbSkinMask, cv::Point(maxPos.x - 50, maxPos.y), 10, color, 1);
 	}
 	else if (searchMode == SEARCH_LEFT) {
-		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x + 40, maxPos.y), color, 2);
-		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x + 40, maxPos.y), 10, color, 2);
+		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x + 40, maxPos.y), color, 1);
+		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x + 40, maxPos.y), 10, color, 1);
 	}
 	else if (searchMode == SEARCH_STRICT_LEFT) {
-		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x + 40, maxPos.y), color, 2);
-		rect(*this->rgbSkinMask, cv::Point(maxPos.x + 50, maxPos.y), 10, color, 2);
+		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x + 40, maxPos.y), color, 1);
+		rect(*this->rgbSkinMask, cv::Point(maxPos.x + 50, maxPos.y), 10, color, 1);
 	}
 	else if (searchMode == SEARCH_UP) {
-		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x, maxPos.y - 40), color, 2);
-		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x, maxPos.y - 40), 10, color, 2);
+		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x, maxPos.y - 40), color, 1);
+		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x, maxPos.y - 40), 10, color, 1);
 	}
 	else if (searchMode == SEARCH_DOWN) {
-		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x, maxPos.y + 40), color, 2);
-		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x, maxPos.y + 40), 10, color, 2);
+		cv::line(*this->rgbSkinMask, maxPos, cv::Point(maxPos.x, maxPos.y + 40), color, 1);
+		cv::circle(*this->rgbSkinMask, cv::Point(maxPos.x, maxPos.y + 40), 10, color, 1);
 	}
 	else { // searchMode == FREE_SEARCH
-		cv::line(*this->rgbSkinMask, cv::Point(maxPos.x, maxPos.y - 40), cv::Point(maxPos.x, maxPos.y + 40), color, 2);
-		cv::line(*this->rgbSkinMask, cv::Point(maxPos.x - 40, maxPos.y), cv::Point(maxPos.x + 40, maxPos.y), color, 2);
-		cv::circle(*this->rgbSkinMask, maxPos, 10, color, 2);
+		cv::line(*this->rgbSkinMask, cv::Point(maxPos.x, maxPos.y - 40), cv::Point(maxPos.x, maxPos.y + 40), color, 1);
+		cv::line(*this->rgbSkinMask, cv::Point(maxPos.x - 40, maxPos.y), cv::Point(maxPos.x + 40, maxPos.y), color, 1);
+		cv::circle(*this->rgbSkinMask, maxPos, 10, color, 1);
 	}
 #endif
 	// return best position
@@ -635,7 +635,7 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 */
 double Hand::getCoverage(cv::Point& pos, cv::Mat& blobMap, int radius) {
 	cv::Mat mask = cv::Mat::zeros(blobMap.rows, blobMap.cols, blobMap.type()); // all 0
-	cv::circle(mask, pos, radius, 255, CV_FILLED);
+	cv::circle(mask, pos, radius, 155, CV_FILLED);
 	cv::Mat result;
 	cv::bitwise_and(blobMap, mask, result);
 	
