@@ -55,19 +55,19 @@ void Hand::draw(cv::Mat& canvas) {
 			this->drawTrace(canvas, this->positionHistory, this->positionIndex, 0, 150, 255);
 		else
 			this->drawTrace(canvas, this->positionHistory, this->positionIndex, 0, 255, 0);
-#endif
+
 		if (this->opticalFlowPoint.x != 0) {
 			cv::circle(canvas, this->opticalFlowPoint, 25, CV_RGB(255, 0, 0), 2);
-		
-		for (int i = 0; i < this->opticalFlowPointsPrev.size(); i++) {
-			if (this->opticalFlowStatus[i] == 1) {
-				if (this->opticalFlowSuccess[i]) 
-					cv::line(canvas, this->opticalFlowPointsPrev[i], this->opticalFlowPoints[i], CV_RGB(0, 255, 0), 1);
-				else 
-					cv::line(canvas, this->opticalFlowPointsPrev[i], this->opticalFlowPoints[i], CV_RGB(255, 0, 0), 1);
+			for (int i = 0; i < this->opticalFlowPointsPrev.size(); i++) {
+				if (this->opticalFlowStatus[i] == 1) {
+					if (this->opticalFlowSuccess[i]) 
+						cv::line(canvas, this->opticalFlowPointsPrev[i], this->opticalFlowPoints[i], CV_RGB(0, 255, 0), 1);
+					else 
+						cv::line(canvas, this->opticalFlowPointsPrev[i], this->opticalFlowPoints[i], CV_RGB(255, 0, 0), 1);
+				}
 			}
 		}
-		}
+#endif
 	}
 
 }

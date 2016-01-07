@@ -299,7 +299,9 @@ void HandDetector::draw(cv::Mat& canvas) {
 
 // show the debug map
 void HandDetector::show(std::string windowName) {
+#ifdef DEBUG
 	cv::imshow(windowName, this->rgbSkinMask);
+#endif
 	cv::imshow("handSkinMask", this->skinMask);
 }
 
