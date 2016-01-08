@@ -1,3 +1,4 @@
+
 # Mercury Gesture Engine
 C++ OpenCV application for realtime tracking of gestures.
 

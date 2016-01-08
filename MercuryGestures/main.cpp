@@ -130,6 +130,12 @@ int run(cv::VideoCapture& cap, int fps) {
 				//skinDetector.show();
 				//edgeDetector.show();
 				//handDetector.show();
+
+				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI:  ------------- //
+				//																   //
+				double publishValue = ROImovementDetector.value;				   //
+				//																   //
+				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI   ------------- //
 			}
 			initialized = true;
 		}
