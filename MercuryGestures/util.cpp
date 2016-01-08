@@ -114,6 +114,14 @@ int rgbBound(int color) {
 	return std::min(255, std::max(0, color));
 }
 
+cv::Rect inflateRect(cv::Rect& rectangle, int inflation, cv::Mat& boundary) {
+	int x = std::max(0, std::min(boundary.cols, rectangle.x - inflation));
+	int y = std::max(0, std::min(boundary.rows, rectangle.y - inflation));
+	int width = std::min(boundary.cols, rectangle.x + rectangle.width + inflation) - x;
+	int height = std::min(boundary.rows, rectangle.y + rectangle.height + inflation) - y;
+	return cv::Rect(x, y, width, height);
+}
+
 //TODO: explain
 void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Point& focalPoint, int searchSpaceRadius) {
 	empty.x = std::max(0, std::min(inputSpace.cols, focalPoint.x - searchSpaceRadius));
@@ -125,11 +133,9 @@ void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Point& focalPoi
 	empty.area = searchRect;
 }
 void getSearchSpace(SearchSpace& empty, cv::Mat& inputSpace, cv::Rect& focalRect, int searchSpaceRadius) {
-	empty.x = std::max(0, std::min(inputSpace.cols, focalRect.x - searchSpaceRadius));
-	empty.y = std::max(0, std::min(inputSpace.rows, focalRect.y - searchSpaceRadius));
-	int width = std::min(inputSpace.cols, focalRect.x + focalRect.width + searchSpaceRadius) - empty.x;
-	int height = std::min(inputSpace.rows, focalRect.y + focalRect.height + searchSpaceRadius) - empty.y;
-	cv::Rect searchRect(empty.x, empty.y, width, height);
+	cv::Rect searchRect = inflateRect(focalRect, searchSpaceRadius, inputSpace);
+	empty.x = searchRect.x;
+	empty.y = searchRect.y;
 	empty.mat = inputSpace(searchRect);
 	empty.area = searchRect;
 }

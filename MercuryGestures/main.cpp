@@ -16,6 +16,7 @@ int run(cv::VideoCapture& cap, int fps) {
 	EdgeDetector  edgeDetector;
 	HandDetector  handDetector(fps);
 	MovementDetector movementDetector(fps);
+	MovementDetector ROImovementDetector(fps);
 	ActivityGraph activityGraph(fps);
 	FaceDetector  faceDetector(fps);
 	if (faceDetector.setup() == false)
@@ -40,14 +41,15 @@ int run(cv::VideoCapture& cap, int fps) {
 	int skip = 0;
 	int calcSkip = 0;
 
-	activityGraph.addChannel("maskedMovement", CV_RGB(0, 255, 0), 0.0);
+	activityGraph.addChannel("Skin masked Movement", CV_RGB(0, 255, 0), 0.0);
+	activityGraph.addChannel("ROI masked Movement", CV_RGB(255, 0, 0), 0.0);
 
 	for (;;) {
-		// debug time elapsed
-		auto start = std::chrono::high_resolution_clock::now();
-
 		// get a new video frame
 		cap >> rawFrame;
+
+		// debug time elapsed
+		auto start = std::chrono::high_resolution_clock::now();
 
 		// check for end of video file.
 		if (rawFrame.empty()) { break; }
@@ -81,15 +83,20 @@ int run(cv::VideoCapture& cap, int fps) {
 
 		// start detection of edges, face and skin
 		bool faceDetected = faceDetector.detect(gray);
-		double pixelSizeInCm = faceDetector.getScale();
+		double pixelSizeInCm = faceDetector.pixelSizeInCm;
 		if (faceDetected) {
 			auto face = &(faceDetector.face.rect);
 			skinDetector.detect(*face, frame, initialized, (3.0 / pixelSizeInCm) * 4);
 			edgeDetector.detect(gray);
 			
 			if (initialized) {
+				cv::Mat temporalSkinMask = skinDetector.getMergedMap();
+				cv::Mat roiMask = cv::Mat::zeros(temporalSkinMask.rows, temporalSkinMask.cols, temporalSkinMask.type()); // all 0
+
+				// get an initial motion estimate based on the temporal skin mask alone. This is used 
+				// in the hand detection
 				movementDetector.detect(gray, grayPrev);
-				movementDetector.mask(skinDetector.getMergedMap());
+				movementDetector.mask(temporalSkinMask);
 				movementDetector.calculate(faceDetector.normalizationFactor);
 
 				handDetector.detect(
@@ -101,15 +108,28 @@ int run(cv::VideoCapture& cap, int fps) {
 					pixelSizeInCm
 				);
 				handDetector.draw(frame);
+				handDetector.drawTraces(frame);
+
+				// create the ROI map with just the hands and the face. This would reduce the difference
+				// between long and short sleeves.
+				handDetector.addResultToMask(roiMask);
+				faceDetector.addResultToMask(roiMask);
+				cv::bitwise_and(temporalSkinMask, roiMask, temporalSkinMask);
+
+				// detect movent only within the ROI areas.
+				ROImovementDetector.detect(gray, grayPrev);
+				ROImovementDetector.mask(temporalSkinMask);
+				ROImovementDetector.calculate(faceDetector.normalizationFactor);
 
 				// draw the graph (optional);
-				// activityGraph.setValue("maskedMovement", maskedMovementDetector.value);
-				// activityGraph.draw(frame);
+				activityGraph.setValue("Skin masked Movement", movementDetector.value);
+				activityGraph.setValue("ROI masked Movement", ROImovementDetector.value);
+				activityGraph.draw(frame);
 				
-				movementDetector.show("maskedSkinMovement");
+				//movementDetector.show("maskedSkinMovement");
 				//skinDetector.show();
 				//edgeDetector.show();
-				handDetector.show();
+				//handDetector.show();
 			}
 			initialized = true;
 		}
@@ -208,8 +228,9 @@ void manage(int movieIndex) {
 	else if (value != 0) {
 		return;  // quit
 	}
-	// if 0, repeat movie
-
+	else {
+		// if 0, repeat movie
+	}
 	
 
 	// make sure the cycle of movies is from 0 to amountOfMovies
@@ -222,6 +243,6 @@ void manage(int movieIndex) {
 }
 
 int main(int argc, char *argv[]) {
-	manage(6);
+	manage(0);
 	return 0;
 }

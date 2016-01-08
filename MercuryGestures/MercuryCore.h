@@ -92,3 +92,5 @@ void fromSearchSpace(SearchSpace& space, cv::Point2f& point);
 
 double getDistance(cv::Point& p1, cv::Point& p2);
 void rect(cv::Mat& mat, cv::Point point, int radius, cv::Scalar color, int thickness);
+
+cv::Rect inflateRect(cv::Rect& rectangle, int inflation, cv::Mat& boundary);

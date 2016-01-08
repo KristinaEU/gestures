@@ -4,8 +4,9 @@
 #include "ActivityGraph.h"
 
 
-ActivityGraph::ActivityGraph(int fps) {
+ActivityGraph::ActivityGraph(int fps, int graphSeconds) {
 	this->fps = fps;
+	this->graphSeconds = graphSeconds;
 };
 
 ActivityGraph::~ActivityGraph() {};

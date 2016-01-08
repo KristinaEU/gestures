@@ -13,7 +13,7 @@ public:
 	int ticks = 0;
 
 	// graph settings
-	int graphSeconds = 120;
+	int graphSeconds = 60;
 	int graphHeight = 250;
 	int distanceFromBottom = 15;
 
@@ -23,7 +23,7 @@ public:
 	std::vector<double> channelPreviousValues;
 	std::vector<cv::Scalar> channelColors;
 
-	ActivityGraph(int fps);
+	ActivityGraph(int fps, int graphSeconds = 60);
 	~ActivityGraph();
 
 	void setVideoProperties(int width, int height);

@@ -32,10 +32,14 @@ void FaceDetector::updateScale() {
 	}
 }
 
-
-double FaceDetector::getScale() {
-	return this->pixelSizeInCm;
+/*
+This will be done after the calculation is complete. It will draw a rectangle a bit larger than the face on the canvas
+*/
+void FaceDetector::addResultToMask(cv::Mat& canvas) {
+	cv::Rect inflatedHead = inflateRect(this->face.rect, 10, canvas);
+	cv::rectangle(canvas, inflatedHead, 255, CV_FILLED);
 }
+
 
 /**
 * This detects faces. It assumes only one face will be in view. It will draw the boundaries of the expected position of
@@ -68,7 +72,6 @@ bool FaceDetector::detect(cv::Mat& gray) {
 		SearchSpace space;
 		getSearchSpace(space, gray, this->face.rect, 50);
 
-		
 		// detect the face in the grayscale image
 		bool detected = this->detectFace(space.mat, newFaces);
 		if (detected) {

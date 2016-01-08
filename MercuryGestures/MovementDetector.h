@@ -9,7 +9,7 @@ public:
 	int index = 0;
 	int fps = 25;
 	std::vector<double> values;
-	double maxMovement = 25000.0; // todo: determine this?
+	double maxMovement = 20000.0; // todo: determine this automatically?
 	double value;
 	double filteredValue;
 

@@ -29,7 +29,7 @@ public:
 	~FaceDetector();
 
 	void updateScale();
-	double getScale();
+	void addResultToMask(cv::Mat& canvas);
 
 	/**
 	* This detects faces. It assumes only one face will be in view. It will draw the boundaries of the expected position of

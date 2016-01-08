@@ -54,6 +54,10 @@ void SkinDetector::detect(cv::Rect& face, cv::Mat& frame, bool refine, int noise
 	cv::inRange(mask, cv::Scalar(Y_MIN, Cr_MIN, Cb_MIN), cv::Scalar(Y_MAX, Cr_MAX, Cb_MAX), this->skinMask);
 }
 
+
+/*
+get a mask made up of the current and the previous skinmask.
+*/
 cv::Mat SkinDetector::getMergedMap() {
 	if (this->previousSkinMask.cols == this->skinMask.cols) {
 		cv::Mat mergedMap;

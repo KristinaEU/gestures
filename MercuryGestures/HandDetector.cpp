@@ -297,21 +297,43 @@ void HandDetector::draw(cv::Mat& canvas) {
 	this->rightHand.draw(canvas);
 }
 
+
+/*
+* Get the amount of edges inside of a blob as an integer
+*/
+void HandDetector::drawTraces(cv::Mat& canvas) {
+	this->leftHand.drawTrace(canvas);
+	this->rightHand.drawTrace(canvas);
+}
+
 // show the debug map
 void HandDetector::show(std::string windowName) {
 #ifdef DEBUG
 	cv::imshow(windowName, this->rgbSkinMask);
 #endif
-	cv::imshow("handSkinMask", this->skinMask);
+	//cv::imshow("handSkinMask", this->skinMask);
 }
 
+
+/*
+This will be done after the calculation is complete. It will draw two (large) circles on a mask,
+one for the current and one for the previous position.
+*/
+void HandDetector::addResultToMask(cv::Mat& canvas) {
+	this->leftHand.addResultToMask(canvas);
+	this->rightHand.addResultToMask(canvas);
+}
 
 
 
 //***************************************** PRIVATE  **********************************************//
 
 
-
+/*
+This will handle possible intersections of the two hands symetrically. If the hands are close, they
+will already be repelled. If the intersection state is detected even after the pushing, we will
+set the hands as "trapped". This will cause them to fall back to the blob estimates.
+*/
 void HandDetector::handleIntersections() {
 #ifdef DEBUG
 	this->leftHand.isClose(this->rightHand.position, true);
@@ -323,8 +345,10 @@ void HandDetector::handleIntersections() {
 	int recoveryIterations = 15;
 	while (handCloseTogether && iterations < recoveryIterations) {
 		// move to the side
+		cv::Point leftPosition = this->leftHand.position;
+
 		this->leftHand.handleIntersection(this->rightHand.position, this->skinMask);
-		this->rightHand.handleIntersection(this->leftHand.position, this->skinMask);
+		this->rightHand.handleIntersection(leftPosition, this->skinMask);
 		
 		// check new state
 		handCloseTogether = this->leftHand.isClose(this->rightHand.position);
@@ -332,8 +356,8 @@ void HandDetector::handleIntersections() {
 		iterations++;
 	}
 	if (this->leftHand.isIntersecting(this->rightHand.position)) {
-		this->leftHand.setTrappedIntersection();
-		this->rightHand.setTrappedIntersection();
+		this->leftHand.setInvalideState();
+		this->rightHand.setInvalideState();
 	}
 }
 
