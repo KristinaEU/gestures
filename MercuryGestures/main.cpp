@@ -18,7 +18,7 @@ int run(cv::VideoCapture& cap, int fps) {
 	MovementDetector movementDetector(fps);
 	MovementDetector ROImovementDetector(fps);
 	ActivityGraph activityGraph(fps);
-	FaceDetector  faceDetector(fps);
+	FaceDetector  faceDetector;
 	if (faceDetector.setup() == false)
 		return -1;
 
@@ -138,6 +138,13 @@ int run(cv::VideoCapture& cap, int fps) {
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI   ------------- //
 			}
 			initialized = true;
+		}
+		else {
+			faceDetector.reset();
+			handDetector.reset();
+			activityGraph.setValue("Skin masked Movement", 0.0);
+			activityGraph.setValue("ROI masked Movement", 0.0);
+			initialized = false;
 		}
 
 		// copy to buffer so we can do a difference check.

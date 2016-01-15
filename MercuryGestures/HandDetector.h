@@ -76,7 +76,8 @@ public:
 	
 	// set the estimate based on the blobs. This is a fallback and/or initialization position.
 	void setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIntersection = false, Condition condition = NONE);
-	
+	void reset();
+
 	// handle intersections
 	bool isClose(cv::Point& otherHandPosition, bool drawDebug = false);
 	bool isIntersecting(cv::Point& otherHandPosition);
@@ -151,6 +152,7 @@ public:
 	HandDetector(int fps);
 	~HandDetector();
 	
+	void reset();
 	void addResultToMask(cv::Mat& canvas);
 	void detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm);
 	void draw(cv::Mat& canvas);

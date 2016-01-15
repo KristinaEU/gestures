@@ -8,10 +8,11 @@ public:
 	int faceCenterX = 0;
 	int faceCenterY = 0;
 	int faceReadingThreshold = 5;
+	int failureThreshold = 25;
 	bool faceLocked = false;
 	int goodReadings = 0;
+	int badReadings = 0;
 	double faceAreaThresholdFactor = 0.08; // 8% of total frame width;
-	int fps = 25;
 	int frameHeight = 400;
 	int frameWidth = 640;
 	cv::CascadeClassifier face_cascade;
@@ -25,7 +26,7 @@ public:
 	double pixelSizeInCm = 0.25; // will be refined in the normalization phase
 	double normalizationScale = 0.25; // cm per pixel based on face detection.
 
-	FaceDetector(int fps);
+	FaceDetector();
 	~FaceDetector();
 
 	void updateScale();
@@ -40,4 +41,5 @@ public:
 	bool detect(cv::Mat& gray);
 	bool setup();
 	void setVideoProperties(int width, int height);
+	void reset();
 };

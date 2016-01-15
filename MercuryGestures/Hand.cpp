@@ -14,6 +14,15 @@ Hand::Hand() {
 Hand::~Hand() {}
 
 
+void Hand::reset() {
+	this->position = cv::Point(0, 0);
+	this->positionHistory.clear();
+	this->positionHistory.resize(historySize, cv::Point(0, 0));
+	this->blobHistory.resize(historySize);
+	this->positionIndex = 0;
+	this->blobIndex = 0;
+}
+
 /*
  * Set the estimated value based on the blob distribution. If this is a poor estimation, ignoreIntersection can be turned on.
  * When intersecting, the area search will prefer the estimate over the colliding result.
@@ -225,6 +234,11 @@ void Hand::solve(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask, std::vecto
 	if (lastPosition.x != 0 && lastPosition.y != 0 && this->invalidState == false) {
 		auto predictedPoint = this->getPredictedPosition(gray, grayPrev, skinMask);
 		this->improveByAreaSearch(skinMask, movementMap, predictedPoint);
+	}
+
+	// is we are forced to switch to a blob estimate and it is far (> 15cm) away we reset the history.
+	if (this->invalidState && getDistance(lastPosition, this->position) > 15 * this->cmInPixels) {
+		this->reset();
 	}
 
 	// reset intersection state

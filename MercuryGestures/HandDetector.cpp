@@ -324,6 +324,11 @@ void HandDetector::addResultToMask(cv::Mat& canvas) {
 	this->rightHand.addResultToMask(canvas);
 }
 
+void HandDetector::reset() {
+	this->leftHand.reset();
+	this->rightHand.reset();
+}
+
 
 
 //***************************************** PRIVATE  **********************************************//

@@ -3,9 +3,7 @@
 #include "MercuryCore.h"
 #include "FaceDetector.h"
 
-FaceDetector::FaceDetector(int fps) {
-	this->fps = fps;
-}
+FaceDetector::FaceDetector() {}
 FaceDetector::~FaceDetector() {}
 
 /**
@@ -67,60 +65,81 @@ bool FaceDetector::detect(cv::Mat& gray) {
 	// face detection for normalization
 	FaceData newFaces;
 	float movementThreshold = this->faceAreaThresholdFactor * this->frameWidth;
-
+	bool detected = false;
 	if (this->faceLocked) {
 		SearchSpace space;
 		getSearchSpace(space, gray, this->face.rect, 50);
 
 		// detect the face in the grayscale image
-		bool detected = this->detectFace(space.mat, newFaces);
+		detected = this->detectFace(space.mat, newFaces);
 		if (detected) {
 			// restore original coordinates
 			fromSearchSpace(space, newFaces.rect);
 		}
 		else {
 			// fallback
-			this->detectFace(gray, newFaces);
+			detected = this->detectFace(gray, newFaces);
 		}
 	}
 	else {
 		// detect in full image
-		this->detectFace(gray, newFaces);
+		detected = this->detectFace(gray, newFaces);
 	}
 
-	// check if the face is far away from the previous place it was detected
-	bool faceInArea = std::abs(getCenterX(newFaces.rect) - this->faceCenterX) < movementThreshold &&
-					  std::abs(getCenterY(newFaces.rect) - this->faceCenterY) < movementThreshold;
-	
-	// need a minimum amount of good readings to accept that this is the location of the face.
-	if (faceInArea)
-		this->goodReadings += 1;
-	else
+	if (detected) {
+		this->badReadings = 0;
+
+		// check if the face is far away from the previous place it was detected
+		bool faceInArea = std::abs(getCenterX(newFaces.rect) - this->faceCenterX) < movementThreshold &&
+			std::abs(getCenterY(newFaces.rect) - this->faceCenterY) < movementThreshold;
+
+		// need a minimum amount of good readings to accept that this is the location of the face.
+		if (faceInArea)
+			this->goodReadings += 1;
+		else
+			this->goodReadings = 0;
+
+		// lock the position if we have enough good readings
+		if (this->goodReadings > faceReadingThreshold)
+			this->faceLocked = true;
+
+		// if it was a good measurement we store it in the class
+		if (newFaces.count == 1 && (this->faceLocked == false || (this->faceLocked && faceInArea))) {
+			this->face.count = newFaces.count;
+			this->face.rect = newFaces.rect;
+		}
+
+		// if we have a face, update the position and return true: we have something to work with.
+		if (this->face.count != 0) {
+			this->faceCenterX = getCenterX(this->face.rect);
+			this->faceCenterY = getCenterY(this->face.rect);
+
+			// update the scale of the face.
+			this->updateScale();
+			return true;
+		}
+		return false;
+	}
+	else {
+		// we allow using the old face position for this->failureThreshold frames before reverting to failed state.
 		this->goodReadings = 0;
-
-	// lock the position if we have enough good readings
-	if (this->goodReadings > faceReadingThreshold)
-		this->faceLocked = true;
-
-	// if it was a good measurement we store it in the class
-	if (newFaces.count == 1 && (this->faceLocked == false || (this->faceLocked && faceInArea))) {
-		this->face.count = newFaces.count;
-		this->face.rect  = newFaces.rect;
-	}
-
-	// if we have a face, update the position and return true: we have something to work with.
-	if (this->face.count != 0) {
-		this->faceCenterX = getCenterX(this->face.rect);
-		this->faceCenterY = getCenterY(this->face.rect);
-		
-		// update the scale of the face.
-		this->updateScale();
-		return true;
-	}
-	return false;
+		this->badReadings += 1;
+		if (this->badReadings < this->failureThreshold && this->face.count != 0) {
+			// this uses the old face
+			return true;
+		}
+		return false;
+	}	
 }
 
 void FaceDetector::setVideoProperties(int frameWidth, int frameHeight) {
 	this->frameHeight = frameHeight;
 	this->frameWidth = frameWidth;
+}
+
+void FaceDetector::reset() {
+	this->faceLocked = false;
+	this->face.count = 0;
+	this->goodReadings = 0;
+	this->badReadings = 0;
 }

@@ -1,20 +1,67 @@
-﻿  ActivityGraph.cpp
-ActivityGraph.cpp(54): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-ActivityGraph.cpp(72): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-ActivityGraph.cpp(73): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-ActivityGraph.cpp(82): warning C4018: '<': signed/unsigned mismatch
-ActivityGraph.cpp(87): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-ActivityGraph.cpp(88): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-ActivityGraph.cpp(90): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+﻿  FaceDetector.cpp
+FaceDetector.cpp(49): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+FaceDetector.cpp(67): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  Hand.cpp
+Hand.cpp(55): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(72): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(129): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(130): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(298): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(299): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(314): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(411): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(444): warning C4018: '<': signed/unsigned mismatch
+Hand.cpp(453): warning C4018: '<': signed/unsigned mismatch
+Hand.cpp(474): warning C4018: '<': signed/unsigned mismatch
+Hand.cpp(497): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(506): warning C4018: '<': signed/unsigned mismatch
+Hand.cpp(546): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(565): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(602): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(603): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(608): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(609): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(614): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(615): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+Hand.cpp(860): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+  HandDetector.cpp
+HandDetector.cpp(23): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(31): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(73): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(82): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(85): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(86): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(90): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(91): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(112): warning C4018: '<': signed/unsigned mismatch
+HandDetector.cpp(139): warning C4018: '<': signed/unsigned mismatch
+HandDetector.cpp(145): warning C4018: '<': signed/unsigned mismatch
+HandDetector.cpp(161): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+HandDetector.cpp(215): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(378): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(383): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(388): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(413): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(414): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(427): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(428): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(433): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(434): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+HandDetector.cpp(464): warning C4018: '<': signed/unsigned mismatch
+HandDetector.cpp(489): warning C4018: '<': signed/unsigned mismatch
+HandDetector.cpp(508): warning C4018: '<': signed/unsigned mismatch
+HandDetector.cpp(514): warning C4018: '<': signed/unsigned mismatch
+HandDetector.cpp(538): warning C4018: '<': signed/unsigned mismatch
   main.cpp
 main.cpp(61): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
 main.cpp(89): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-main.cpp(175): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-main.cpp(182): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-main.cpp(214): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+main.cpp(188): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+main.cpp(195): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+main.cpp(227): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+  MovementDetector.cpp
   Generating code
-  2 of 1406 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
-    1 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+  13 of 1409 functions ( 0.9%) were compiled, the rest were copied from previous compilation.
+    4 functions were new in current compilation
+    29 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   MercuryGestures.vcxproj -> D:\Dropbox\Almende\Projects\C\mercury-gestures\MercuryGestures\Release\MercuryGestures.exe
