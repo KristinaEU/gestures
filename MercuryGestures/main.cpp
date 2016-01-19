@@ -109,6 +109,7 @@ int run(cv::VideoCapture& cap, int fps) {
 				);
 				handDetector.draw(frame);
 				handDetector.drawTraces(frame);
+				//faceDetector.draw(frame);
 
 				// create the ROI map with just the hands and the face. This would reduce the difference
 				// between long and short sleeves.
@@ -215,8 +216,10 @@ int run(cv::VideoCapture& cap, int fps) {
 
 void manage(int movieIndex) {
 	int amountOfMovies = 12;
-	cv::VideoCapture cap(joinString(joinString("./media/", movieIndex), ".mp4"));
-
+	cv::VideoCapture cap;
+	
+	cap.open(joinString(joinString("./media/", movieIndex), ".mp4"));
+	//cap.open(0);
 	// initialize video
 	if (!cap.isOpened()) {
 		std::cout << "Cannot open the video file" << std::endl;

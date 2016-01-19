@@ -3,7 +3,9 @@
 #include "MercuryCore.h"
 #include "FaceDetector.h"
 
-FaceDetector::FaceDetector() {}
+FaceDetector::FaceDetector() {
+	this->reset();
+}
 FaceDetector::~FaceDetector() {}
 
 /**
@@ -33,11 +35,17 @@ void FaceDetector::updateScale() {
 /*
 This will be done after the calculation is complete. It will draw a rectangle a bit larger than the face on the canvas
 */
-void FaceDetector::addResultToMask(cv::Mat& canvas) {
-	cv::Rect inflatedHead = inflateRect(this->face.rect, 10, canvas);
-	cv::rectangle(canvas, inflatedHead, 255, CV_FILLED);
+void FaceDetector::addResultToMask(cv::Mat& mask) {
+	cv::Rect inflatedHead = inflateRect(this->face.rect, 10, mask);
+	cv::rectangle(mask, inflatedHead, 255, CV_FILLED);
 }
 
+/*
+This will be done after the calculation is complete. It will draw a rectangle a bit larger than the face on the canvas
+*/
+void FaceDetector::draw(cv::Mat& canvas) {
+	cv::rectangle(canvas, this->face.rect, CV_RGB(0,255,0), 2);
+}
 
 /**
 * This detects faces. It assumes only one face will be in view. It will draw the boundaries of the expected position of

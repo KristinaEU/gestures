@@ -30,8 +30,8 @@ public:
 	~FaceDetector();
 
 	void updateScale();
-	void addResultToMask(cv::Mat& canvas);
-
+	void addResultToMask(cv::Mat& mask);
+	void draw(cv::Mat& canvas);
 	/**
 	* This detects faces. It assumes only one face will be in view. It will draw the boundaries of the expected position of
 	* user body parts. This can be used to make a mask to sample only important parts of the image for movement. It can also
