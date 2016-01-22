@@ -218,6 +218,7 @@ void HandDetector::detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::
 	cv::line(this->rgbSkinMask, cv::Point(centerX, 0), cv::Point(centerX, this->frameHeight), CV_RGB(255, 255, 0));		
 #endif
 
+
 	// update the face mask and process it
 	this->updateFaceMask(highBlobsMask);
 	cv::subtract(this->skinMask, this->faceMask, this->skinMask);
@@ -370,6 +371,12 @@ void HandDetector::handleIntersections() {
 * Get the amount of edges inside of a blob as an integer
 */
 void HandDetector::updateFaceMask(cv::Mat& highBlobsMask) {
+	// initialize the facemask
+	if (this->faceMask.cols == 0) {
+		highBlobsMask.copyTo(this->faceMask);
+		return;
+	}
+
 	cv::Scalar highArea = cv::sum(highBlobsMask);
 	double faceMaskThreshold = 0.01;
 

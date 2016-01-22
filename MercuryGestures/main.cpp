@@ -109,7 +109,7 @@ int run(cv::VideoCapture& cap, int fps) {
 				);
 				handDetector.draw(frame);
 				handDetector.drawTraces(frame);
-				//faceDetector.draw(frame);
+				// faceDetector.draw(frame);
 
 				// create the ROI map with just the hands and the face. This would reduce the difference
 				// between long and short sleeves.
@@ -215,10 +215,45 @@ int run(cv::VideoCapture& cap, int fps) {
 
 
 void manage(int movieIndex) {
-	int amountOfMovies = 12;
+	std::vector<std::string> videoList;
+	videoList.push_back("de001_spk02f.mp4");
+	videoList.push_back("de003_spk01f.mp4");
+	videoList.push_back("de004_spk01f.mp4");
+	videoList.push_back("de005_spk03f.mp4");
+	videoList.push_back("de007_spk02f.mp4");
+	videoList.push_back("de011_spk04f.mp4");
+	videoList.push_back("de012_spk03f.mp4");
+	videoList.push_back("de014_spk03f.mp4");
+	videoList.push_back("de015_spk04f.mp4");
+	videoList.push_back("de016_spk03f.mp4");
+	videoList.push_back("de017_spk03f.mp4");
+	videoList.push_back("de018_spk03f.mp4");
+	videoList.push_back("de019_spk01.mp4");
+	videoList.push_back("de020_spk01m.mp4");
+	videoList.push_back("de021_spk05f.mp4");
+	videoList.push_back("de023_spk02f.mp4");
+	videoList.push_back("de024_spk02m.mp4");
+	videoList.push_back("de028_spk02m.mp4");
+	videoList.push_back("de031_spk03f.mp4");
+	videoList.push_back("de033_spk02m.mp4");
+	videoList.push_back("de033_spk03f.mp4");
+	videoList.push_back("es008_spk02f.mp4");
+	videoList.push_back("es008_spk03m.mp4");
+	videoList.push_back("es012_spk02f.mp4");
+	videoList.push_back("es012_spk03m.mp4");
+	videoList.push_back("es015_spk02f.mp4");
+	videoList.push_back("es017_spk03f.mp4");
+	videoList.push_back("es018_spk03f.mp4");
+	videoList.push_back("es021_spk04f.mp4");
+	videoList.push_back("es024_spk05f.mp4");
+	videoList.push_back("es025_spk06f.mp4");
+	videoList.push_back("es026_spk06f.mp4");
+	videoList.push_back("es028_spk05f.mp4");
+	
+	int amountOfMovies = videoList.size();
 	cv::VideoCapture cap;
 	
-	cap.open(joinString(joinString("./media/", movieIndex), ".mp4"));
+	cap.open(joinString("./media/", videoList[movieIndex]));
 	//cap.open(0);
 	// initialize video
 	if (!cap.isOpened()) {
@@ -259,6 +294,6 @@ void manage(int movieIndex) {
 }
 
 int main(int argc, char *argv[]) {
-	manage(0);
+	manage(20);
 	return 0;
 }
