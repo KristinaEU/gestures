@@ -22,6 +22,8 @@ void MovementDetector::detect(cv::Mat& gray, cv::Mat& grayPrev) {
 	// get the amount of movement in this frame
 	cv::absdiff(gray, grayPrev, diff);
 	cv::threshold(diff, this->movementMap, 25, 255, 0);
+
+	cv::imshow("unfilteredMovement", diff);
 }
 
 void MovementDetector::mask(cv::Mat& mask) {

@@ -81,6 +81,8 @@ int run(cv::VideoCapture& cap, int fps) {
 		// convert frame to grayscale
 		cv::cvtColor(frame, gray, CV_BGR2GRAY);
 
+		cv::imshow("raw", frame);
+
 		// start detection of edges, face and skin
 		bool faceDetected = faceDetector.detect(gray);
 		double pixelSizeInCm = faceDetector.pixelSizeInCm;
@@ -107,9 +109,16 @@ int run(cv::VideoCapture& cap, int fps) {
 					edgeDetector.detectedEdges,
 					pixelSizeInCm
 				);
+
+				cv::Mat faceMat;
+				frame.copyTo(faceMat);
+
 				handDetector.draw(frame);
 				handDetector.drawTraces(frame);
-				// faceDetector.draw(frame);
+				
+				faceDetector.draw(faceMat);
+
+				cv::imshow("face", faceMat);
 
 				// create the ROI map with just the hands and the face. This would reduce the difference
 				// between long and short sleeves.
@@ -127,10 +136,10 @@ int run(cv::VideoCapture& cap, int fps) {
 				activityGraph.setValue("ROI masked Movement", ROImovementDetector.value);
 				activityGraph.draw(frame);
 				
-				//movementDetector.show("maskedSkinMovement");
-				//skinDetector.show();
-				//edgeDetector.show();
-				//handDetector.show();
+				movementDetector.show("maskedSkinMovement");
+				skinDetector.show();
+				edgeDetector.show();
+				handDetector.show();
 
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI:  ------------- //
 				//																   //
@@ -166,7 +175,7 @@ int run(cv::VideoCapture& cap, int fps) {
 		// prepare for next loop
 		cv::putText(frame, joinString("f:", frameIndex), cv::Point(frameWidth - 110, 30), 0, 1, CV_RGB(255, 0, 0), 2);
 		cv::putText(frame, joinString(joinString("t:", duration)," ms"), cv::Point(frameWidth - 110, 50), 0, 0.5, CV_RGB(255, 0, 0), 1);
-		cv::imshow("frame", frame);
+		cv::imshow("DebugGUI", frame);
 
 		int keystroke = cv::waitKey(waitTime);
 		
@@ -221,6 +230,7 @@ void manage(int movieIndex) {
 	videoList.push_back("de004_spk01f.mp4");
 	videoList.push_back("de005_spk03f.mp4");
 	videoList.push_back("de007_spk02f.mp4");
+	videoList.push_back("de010_spk03f.mp4");
 	videoList.push_back("de011_spk04f.mp4");
 	videoList.push_back("de012_spk03f.mp4");
 	videoList.push_back("de014_spk03f.mp4");
@@ -237,6 +247,7 @@ void manage(int movieIndex) {
 	videoList.push_back("de031_spk03f.mp4");
 	videoList.push_back("de033_spk02m.mp4");
 	videoList.push_back("de033_spk03f.mp4");
+	/*
 	videoList.push_back("es008_spk02f.mp4");
 	videoList.push_back("es008_spk03m.mp4");
 	videoList.push_back("es012_spk02f.mp4");
@@ -249,6 +260,7 @@ void manage(int movieIndex) {
 	videoList.push_back("es025_spk06f.mp4");
 	videoList.push_back("es026_spk06f.mp4");
 	videoList.push_back("es028_spk05f.mp4");
+	*/
 	
 	int amountOfMovies = videoList.size();
 	cv::VideoCapture cap;
@@ -294,6 +306,6 @@ void manage(int movieIndex) {
 }
 
 int main(int argc, char *argv[]) {
-	manage(20);
+	manage(5);
 	return 0;
 }

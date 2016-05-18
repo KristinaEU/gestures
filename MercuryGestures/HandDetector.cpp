@@ -291,7 +291,7 @@ void HandDetector::detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::
 
 
 /*
-* Get the amount of edges inside of a blob as an integer
+* Draw the hand icons on the canvas
 */
 void HandDetector::draw(cv::Mat& canvas) {
 	this->leftHand.draw(canvas);
@@ -300,7 +300,7 @@ void HandDetector::draw(cv::Mat& canvas) {
 
 
 /*
-* Get the amount of edges inside of a blob as an integer
+* draw the traces of the hand position over time on the canvas
 */
 void HandDetector::drawTraces(cv::Mat& canvas) {
 	this->leftHand.drawTrace(canvas);
@@ -368,7 +368,7 @@ void HandDetector::handleIntersections() {
 }
 
 /*
-* Get the amount of edges inside of a blob as an integer
+* Update the mask containing the face blob.
 */
 void HandDetector::updateFaceMask(cv::Mat& highBlobsMask) {
 	// initialize the facemask
