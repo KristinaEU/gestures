@@ -179,35 +179,34 @@ int run(cv::VideoCapture& cap, int fps) {
 
 		int keystroke = cv::waitKey(waitTime);
 		
-		if (keystroke == 27) {
-			std::cout << keystroke << std::endl;
+		if (keystroke == 27 || keystroke == 1048603 || keystroke == 1048689) {  //ESC or q
 			return 100;
 			break;
 		}
-		else if (keystroke == 2424832) { // left arrow
+		else if (keystroke == 2424832 || keystroke == 1113937) { // left arrow
 			if (waitTime < 100) {
 				return -1;
 			}
 		}
-		else if (keystroke == 2555904) { // right arrow
+		else if (keystroke == 2555904 || keystroke == 1113939) { // right arrow
 			if (waitTime < 100) {
 				return 1;
 			}
 		}
-		else if (keystroke == 32) { // spacebar
+		else if (keystroke == 32 || keystroke == 1048608) { // spacebar
 			waitTime = 1e6;
 		}
-		else if (keystroke == 13) {  // return 
+		else if (keystroke == 13 || keystroke == 1048586) {  // return 
 			waitTime = 2;
 		}
-		else if (keystroke == 115) { // s
+		else if (keystroke == 115 || keystroke == 1048694) { // s
 			skip = 750;
 			waitTime = 1e6;
 		}
-		else if (keystroke == 100) { // d
+		else if (keystroke == 100 || keystroke == 1048676) { // d
 			calcSkip = 50;
 		}
-		else if (keystroke == 114) { // r
+		else if (keystroke == 114 || keystroke == 1048690) { // r
 			return 0;
 		}
 		else if (keystroke >= 0) {
