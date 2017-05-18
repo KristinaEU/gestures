@@ -28,7 +28,7 @@ int run(cv::VideoCapture& cap, int fps) {
 	cv::Mat gray;
 	cv::Mat grayPrev;
 
-	int frameHeightMax = 400;
+    int frameHeightMax = 300;
 	
 	BodyRects body;
 
@@ -144,6 +144,11 @@ int run(cv::VideoCapture& cap, int fps) {
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI:  ------------- //
 				//																   //
 				double publishValue = ROImovementDetector.value;				   //
+				if (handDetector.leftHand.position.x == 0 || handDetector.leftHand.position.y ==0) {leftHandMissing = true; }
+				if (handDetector.rightHand.position.x == 0 || handDetector.rightHand.position.y ==0) {rightHandMissing = true;}
+
+				// values to grab
+				//      publishValue, leftHandMissing, rightHandMissing, codeLH, codeRH, codeGesture (still empty)
 				//																   //
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI   ------------- //
 			}
@@ -188,7 +193,7 @@ int run(cv::VideoCapture& cap, int fps) {
 				return -1;
 			}
 		}
-		else if (keystroke == 2555904 || keystroke == 1113939) { // right arrow
+		else if (keystroke == 2555904 || keystroke == 1113939 || keystroke == 83 || keystroke == 54) { // right arrow
 			if (waitTime < 100) {
 				return 1;
 			}
@@ -208,8 +213,10 @@ int run(cv::VideoCapture& cap, int fps) {
 		}
 		else if (keystroke == 114 || keystroke == 1048690) { // r
 			return 0;
+		} else if (keystroke == 97) { // a=vorige
+			return 97;
 		}
-		else if (keystroke >= 0) {
+		else if (keystroke >= 0 && keystroke != 255) {
 			std::cout << "key:" << keystroke << std::endl;
 		}
 
@@ -287,6 +294,13 @@ void manage(int movieIndex) {
 		newIndex += 1;
 	else if (value == -1)  // previous movie
 		newIndex -= 1;
+
+    else if (value == 97) {
+        cap.open(0);
+        fps=24;
+        value = run(cap, fps);
+        cap.release();
+    }
 	else if (value != 0) {
 		return;  // quit
 	}
@@ -305,6 +319,6 @@ void manage(int movieIndex) {
 }
 
 int main(int argc, char *argv[]) {
-	manage(5);
+    manage(21);
 	return 0;
 }
