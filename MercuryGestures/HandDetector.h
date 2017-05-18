@@ -154,7 +154,7 @@ public:
 	
 	void reset();
 	void addResultToMask(cv::Mat& canvas);
-	void detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm);
+    void detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm, cv::Mat& faceMat);
 	void draw(cv::Mat& canvas);
 	void drawTraces(cv::Mat& canvas);
 	void show(std::string windowName = "debugMapHands");

@@ -62,233 +62,461 @@ void HandDetector::setVideoProperties(int frameWidth, int frameHeight) {
 }
 
 
-/*
-* This is the detector entree point. It does too much at the moment so it is in need of seperation. We get the blobs, filter them on size,
-* segment them, judge them, forward them to the specific analysers
-*/
-void HandDetector::detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm) {
-	skinMask.copyTo(this->skinMask);
+///*
+//* This is the detector entree point. It does too much at the moment so it is in need of seperation. We get the blobs, filter them on size,
+//* segment them, judge them, forward them to the specific analysers
+//*/
+//void HandDetector::detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm) {
+//	skinMask.copyTo(this->skinMask);
 	
-	// get an estimate for the center based on the face.
-	int centerX = face.x + 0.5 * face.width;
+//	// get an estimate for the center based on the face.
+//	int centerX = face.x + 0.5 * face.width;
 	
-	// set the cm->pixel conversion for the hands as well.
-	this->cmInPixels = 1.0 / pixelSizeInCm;
-	this->leftHand.cmInPixels = this->cmInPixels;
-	this->rightHand.cmInPixels = this->cmInPixels;
+//	// set the cm->pixel conversion for the hands as well.
+//	this->cmInPixels = 1.0 / pixelSizeInCm;
+//	this->leftHand.cmInPixels = this->cmInPixels;
+//	this->rightHand.cmInPixels = this->cmInPixels;
 	
-	// important. These are used for vertical segmentation of blobs. 
-	int bottomFace = face.y + face.height;
-	int lowerBodyHalf = 0.6 * bottomFace + 0.4 * this->frameHeight;
+//	// important. These are used for vertical segmentation of blobs.
+//	int bottomFace = face.y + face.height;
+//	int lowerBodyHalf = 0.6 * bottomFace + 0.4 * this->frameHeight;
 
-	// give the bottom face information to the hands.
-	this->leftHand.faceCoverageThreshold = 0.6 * bottomFace + 0.4 * this->frameHeight;;
-	this->rightHand.faceCoverageThreshold = 0.4 * bottomFace + 0.6 * this->frameHeight;;
+//	// give the bottom face information to the hands.
+//	this->leftHand.faceCoverageThreshold = 0.6 * bottomFace + 0.4 * this->frameHeight;;
+//	this->rightHand.faceCoverageThreshold = 0.4 * bottomFace + 0.6 * this->frameHeight;;
 
-#ifdef DEBUG
-	cv::cvtColor(this->skinMask, this->rgbSkinMask, CV_GRAY2RGB);
-	int leftX = centerX - 50 * cmInPixels;
-	int rightX = centerX + 50 * cmInPixels;
-	cv::line(this->rgbSkinMask, cv::Point(centerX, 0), cv::Point(centerX, this->frameHeight),CV_RGB(255, 0, 0));
-	cv::line(this->rgbSkinMask, cv::Point(leftX, 0),   cv::Point(leftX, this->frameHeight),CV_RGB(255, 0, 255));
-	cv::line(this->rgbSkinMask, cv::Point(rightX, 0),  cv::Point(rightX, this->frameHeight),CV_RGB(255, 0, 255));
-	cv::line(this->rgbSkinMask, cv::Point(0, bottomFace),cv::Point(this->frameWidth, bottomFace),CV_RGB(255, 0, 0));
-	cv::line(this->rgbSkinMask, cv::Point(0, lowerBodyHalf), cv::Point(this->frameWidth, lowerBodyHalf), CV_RGB(255, 255, 0));
-#endif
+//#ifdef DEBUG
+//	cv::cvtColor(this->skinMask, this->rgbSkinMask, CV_GRAY2RGB);
+//	int leftX = centerX - 50 * cmInPixels;
+//	int rightX = centerX + 50 * cmInPixels;
+//	cv::line(this->rgbSkinMask, cv::Point(centerX, 0), cv::Point(centerX, this->frameHeight),CV_RGB(255, 0, 0));
+//	cv::line(this->rgbSkinMask, cv::Point(leftX, 0),   cv::Point(leftX, this->frameHeight),CV_RGB(255, 0, 255));
+//	cv::line(this->rgbSkinMask, cv::Point(rightX, 0),  cv::Point(rightX, this->frameHeight),CV_RGB(255, 0, 255));
+//	cv::line(this->rgbSkinMask, cv::Point(0, bottomFace),cv::Point(this->frameWidth, bottomFace),CV_RGB(255, 0, 0));
+//	cv::line(this->rgbSkinMask, cv::Point(0, lowerBodyHalf), cv::Point(this->frameWidth, lowerBodyHalf), CV_RGB(255, 255, 0));
+//#endif
 
-	// we detect contours twice, once to draw in full, once to detect. This is done to avoid gaps in contours or contours in contours
-	cv::Mat filledContours;
-	skinMask.copyTo(filledContours);
-	std::vector<std::vector<cv::Point>> contours;
-	std::vector<cv::Vec4i> hierarchy;
+//	// we detect contours twice, once to draw in full, once to detect. This is done to avoid gaps in contours or contours in contours
+//	cv::Mat filledContours;
+//	skinMask.copyTo(filledContours);
+//	std::vector<std::vector<cv::Point>> contours;
+//	std::vector<cv::Vec4i> hierarchy;
 	
-	// first find.
-	cv::findContours(filledContours, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+//	// first find.
+//	cv::findContours(filledContours, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
-	// 36cm^2 --> decent hand size measurement
-	double minContour = 6 * 6 * cmInPixels * cmInPixels; 
+//	// 36cm^2 --> decent hand size measurement
+//	double minContour = 6 * 6 * cmInPixels * cmInPixels;
 
-	// draw first pass
-	for (int i = 0; i < contours.size(); i++) {
-		if (cv::contourArea(contours[i]) > minContour) {
-			cv::drawContours(filledContours, contours, i, 255, CV_FILLED, 8, hierarchy, 0, cv::Point());
-		}
-	}
+//	// draw first pass
+//	for (int i = 0; i < contours.size(); i++) {
+//		if (cv::contourArea(contours[i]) > minContour) {
+//			cv::drawContours(filledContours, contours, i, 255, CV_FILLED, 8, hierarchy, 0, cv::Point());
+//		}
+//	}
 
-	dilate(filledContours, filledContours);
-	erode(filledContours, filledContours);
+//	dilate(filledContours, filledContours);
+//	erode(filledContours, filledContours);
 
-	// start seconds pass
-	contours.clear();
-	hierarchy.clear();
-	cv::findContours(filledContours, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+//	// start seconds pass
+//	contours.clear();
+//	hierarchy.clear();
+//	cv::findContours(filledContours, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
-	// mask to remove faces and other irrelevant blobs from the internal skinmask. Is trained over time.
-	cv::Mat highBlobsMask = cv::Mat::zeros(this->skinMask.rows, this->skinMask.cols, this->skinMask.type()); // all 0
-	// create a mat for the edgemask.
-	cv::Mat edgeMask;
-	cv::Mat movementSkinMask;
+//	// mask to remove faces and other irrelevant blobs from the internal skinmask. Is trained over time.
+//	cv::Mat highBlobsMask = cv::Mat::zeros(this->skinMask.rows, this->skinMask.cols, this->skinMask.type()); // all 0
+//	// create a mat for the edgemask.
+//	cv::Mat edgeMask;
+//	cv::Mat movementSkinMask;
 
-	// analyze all blobs
-	int rangeLeftX = this->frameWidth;
-	int rangeRightX = 0;
-	std::vector<BlobInformation> lowerBodyBlobs;
-	std::vector<BlobInformation> midBodyBlobs;
-	std::vector<BlobInformation> highBlobs;
-	std::vector<BlobInformation> blobs;
-	for (int i = 0; i < contours.size(); i++) {
-		if (cv::contourArea(contours[i]) > minContour) {
-			cv::Point lowestPoint(0, 0);
-			cv::Point leftMostPoint(this->frameWidth, 0);
-			cv::Point rightMostPoint(0, 0);
-			cv::Point highestPoint(this->frameWidth, this->frameHeight);
-			for (int j = 0; j < contours[i].size(); j++) {
-				if (contours[i][j].y > lowestPoint.y)
-					lowestPoint = contours[i][j];
-				if (contours[i][j].y < highestPoint.y)
-					highestPoint = contours[i][j];
-				if (contours[i][j].x < leftMostPoint.x)
-					leftMostPoint = contours[i][j];
-				if (contours[i][j].x > rightMostPoint.x)
-					rightMostPoint = contours[i][j];
-			}
-			if (leftMostPoint.x < rangeLeftX)
-				rangeLeftX = leftMostPoint.x;
-			if (rightMostPoint.x > rangeRightX)
-				rangeRightX = rightMostPoint.x;
+//	// analyze all blobs
+//	int rangeLeftX = this->frameWidth;
+//	int rangeRightX = 0;
+//	std::vector<BlobInformation> lowerBodyBlobs;
+//	std::vector<BlobInformation> midBodyBlobs;
+//	std::vector<BlobInformation> highBlobs;
+//	std::vector<BlobInformation> blobs;
+//	for (int i = 0; i < contours.size(); i++) {
+//		if (cv::contourArea(contours[i]) > minContour) {
+//			cv::Point lowestPoint(0, 0);
+//			cv::Point leftMostPoint(this->frameWidth, 0);
+//			cv::Point rightMostPoint(0, 0);
+//			cv::Point highestPoint(this->frameWidth, this->frameHeight);
+//			for (int j = 0; j < contours[i].size(); j++) {
+//				if (contours[i][j].y > lowestPoint.y)
+//					lowestPoint = contours[i][j];
+//				if (contours[i][j].y < highestPoint.y)
+//					highestPoint = contours[i][j];
+//				if (contours[i][j].x < leftMostPoint.x)
+//					leftMostPoint = contours[i][j];
+//				if (contours[i][j].x > rightMostPoint.x)
+//					rightMostPoint = contours[i][j];
+//			}
+//			if (leftMostPoint.x < rangeLeftX)
+//				rangeLeftX = leftMostPoint.x;
+//			if (rightMostPoint.x > rangeRightX)
+//				rangeRightX = rightMostPoint.x;
 
-			auto moment = cv::moments(contours[i], false);
-			auto midPoint = cv::Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
+//			auto moment = cv::moments(contours[i], false);
+//			auto midPoint = cv::Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
 	
-			BlobInformation blob;
-			blob.index = i;
-			blob.top = highestPoint;
-			blob.left = leftMostPoint;
-			blob.right = rightMostPoint;
-			blob.bottom = lowestPoint;
-			blob.center = midPoint;
-			blob.type = OTHER;
-			blob.contour = contours[i];
+//			BlobInformation blob;
+//			blob.index = i;
+//			blob.top = highestPoint;
+//			blob.left = leftMostPoint;
+//			blob.right = rightMostPoint;
+//			blob.bottom = lowestPoint;
+//			blob.center = midPoint;
+//			blob.type = OTHER;
+//			blob.contour = contours[i];
 
-			auto color = CV_RGB(255, 0, 0);
-			// the highest point is below the chest line
-			if (highestPoint.y > lowerBodyHalf) { 
-				color = CV_RGB(255, 255, 0);  // yellow
-				lowerBodyBlobs.push_back(blob);
-				blob.type = LOW;
-			}
-			// the lowest point is below the chest line and the highest below the chin line
-			else if (lowestPoint.y > lowerBodyHalf && highestPoint.y > bottomFace) { 
-				color = CV_RGB(255, 100, 50); // orange
-				midBodyBlobs.push_back(blob);
-				blob.type = MEDIUM;
-			}
-			// the lowest and highest points are below the chin and above the chest line
-			else if (lowestPoint.y > bottomFace && highestPoint.y > bottomFace) {
-				color = CV_RGB(150, 50, 150); // dark purple
-				midBodyBlobs.push_back(blob);
-				blob.type = MEDIUM;
-			}
-			// only the lowest point is below the chest line, the highest is above the chin line... stupid blob
-			else if (lowestPoint.y > lowerBodyHalf && highestPoint.y < bottomFace) {
-				color = CV_RGB(255, 0, 0); // red
-				blob.type = HIGH;
-	  		    highBlobs.push_back(blob);
-			}
-			// the highest point is above the chin line
-			else  if (highestPoint.y < bottomFace) {
-				color = CV_RGB(150, 00, 0);  // dark red
-				blob.type = HIGH;
-				highBlobs.push_back(blob);
+//			auto color = CV_RGB(255, 0, 0);
+//			// the highest point is below the chest line
+//			if (highestPoint.y > lowerBodyHalf) {
+//				color = CV_RGB(255, 255, 0);  // yellow
+//				lowerBodyBlobs.push_back(blob);
+//				blob.type = LOW;
+//			}
+//			// the lowest point is below the chest line and the highest below the chin line
+//			else if (lowestPoint.y > lowerBodyHalf && highestPoint.y > bottomFace) {
+//				color = CV_RGB(255, 100, 50); // orange
+//				midBodyBlobs.push_back(blob);
+//				blob.type = MEDIUM;
+//			}
+//			// the lowest and highest points are below the chin and above the chest line
+//			else if (lowestPoint.y > bottomFace && highestPoint.y > bottomFace) {
+//				color = CV_RGB(150, 50, 150); // dark purple
+//				midBodyBlobs.push_back(blob);
+//				blob.type = MEDIUM;
+//			}
+//			// only the lowest point is below the chest line, the highest is above the chin line... stupid blob
+//			else if (lowestPoint.y > lowerBodyHalf && highestPoint.y < bottomFace) {
+//				color = CV_RGB(255, 0, 0); // red
+//				blob.type = HIGH;
+//	  		    highBlobs.push_back(blob);
+//			}
+//			// the highest point is above the chin line
+//			else  if (highestPoint.y < bottomFace) {
+//				color = CV_RGB(150, 00, 0);  // dark red
+//				blob.type = HIGH;
+//				highBlobs.push_back(blob);
 				
-				cv::drawContours(highBlobsMask, contours, i, 255, CV_FILLED, 8, hierarchy, 0, cv::Point());
-			}
-#ifdef DEBUG
-			// draw the blobs on the rgb skin mask we use for debugging.
-			cv::drawContours(this->rgbSkinMask, contours, i, color, 2, 8, hierarchy, 0, cv::Point());
-#endif
-			blobs.push_back(blob);
-		}
-	}
+//				cv::drawContours(highBlobsMask, contours, i, 255, CV_FILLED, 8, hierarchy, 0, cv::Point());
+//			}
+//#ifdef DEBUG
+//			// draw the blobs on the rgb skin mask we use for debugging.
+//			cv::drawContours(this->rgbSkinMask, contours, i, color, 2, 8, hierarchy, 0, cv::Point());
+//#endif
+//			blobs.push_back(blob);
+//		}
+//	}
 
-	// improve the estimate of the centerX
-	centerX = 0.5 * (centerX + 0.5 * (rangeLeftX + rangeRightX));
+//	// improve the estimate of the centerX
+//	centerX = 0.5 * (centerX + 0.5 * (rangeLeftX + rangeRightX));
 
-#ifdef DEBUG
-	cv::line(this->rgbSkinMask, cv::Point(centerX, 0), cv::Point(centerX, this->frameHeight), CV_RGB(255, 255, 0));		
-#endif
+//#ifdef DEBUG
+//	cv::line(this->rgbSkinMask, cv::Point(centerX, 0), cv::Point(centerX, this->frameHeight), CV_RGB(255, 255, 0));
+//#endif
 
 
-	// update the face mask and process it
-	this->updateFaceMask(highBlobsMask);
-	cv::subtract(this->skinMask, this->faceMask, this->skinMask);
+//	// update the face mask and process it
+//	this->updateFaceMask(highBlobsMask);
+//	cv::subtract(this->skinMask, this->faceMask, this->skinMask);
 
-	// use the updated skin mask to get the edges inside of the blobs
-	cv::bitwise_and(edges, this->skinMask, edgeMask);
-	cv::bitwise_or(this->skinMask, movementMap, movementSkinMask);
+//	// use the updated skin mask to get the edges inside of the blobs
+//	cv::bitwise_and(edges, this->skinMask, edgeMask);
+//	cv::bitwise_or(this->skinMask, movementMap, movementSkinMask);
 	
-	// case 1: 1 blob in the lower segment.
-	if (lowerBodyBlobs.size() == 1) {
-		// if there is one in the lower range and one in the higher range
-		if (midBodyBlobs.size() == 1) { // todo: put back?
-			std::vector<BlobInformation> blobContainer;
-			blobContainer.push_back(lowerBodyBlobs[0]);
-			blobContainer.push_back(midBodyBlobs[0]);
-			this->updateHandsFromNBlobsWithAnalysis(blobContainer, edges);
-		}
-		// if we have one is the lower segment and one in the middle segment, assume these are both hands.
-		else {
-			this->getBothHandPositionsFromBlob(lowerBodyBlobs[0]);
-		}
+//	// case 1: 1 blob in the lower segment.
+//	if (lowerBodyBlobs.size() == 1) {
+//		// if there is one in the lower range and one in the higher range
+//		if (midBodyBlobs.size() == 1) { // todo: put back?
+//			std::vector<BlobInformation> blobContainer;
+//			blobContainer.push_back(lowerBodyBlobs[0]);
+//			blobContainer.push_back(midBodyBlobs[0]);
+//			this->updateHandsFromNBlobsWithAnalysis(blobContainer, edges);
+//		}
+//		// if we have one is the lower segment and one in the middle segment, assume these are both hands.
+//		else {
+//			this->getBothHandPositionsFromBlob(lowerBodyBlobs[0]);
+//		}
 		
-	}
-	// case 2: 2 blobs in the lower segment.
-	else if (lowerBodyBlobs.size() == 2) {
-		this->updateHandsFromTwoBlobs(lowerBodyBlobs[0], lowerBodyBlobs[1]);
-	}
-	// case 3: more blobs in the lower segment.
-	else if (lowerBodyBlobs.size() > 2) {
-		this->updateHandsFromNBlobsWithAnalysis(lowerBodyBlobs, edges);
-	}
-	// case 4: one blob in the middle segment
-	else if (midBodyBlobs.size() == 1) {
-		this->getBothHandPositionsFromBlob(midBodyBlobs[0]);
-	}
-	// case 5: two blobs in the middle segment.
-	else if (midBodyBlobs.size() == 2) {
-		this->updateHandsFromTwoBlobs(midBodyBlobs[0], midBodyBlobs[1]);
-	}
-	// case 6: mote than 2 blobs in the middle segment
-	else if (midBodyBlobs.size() > 2) {
-		// case 1:
-		// hands on the side, something in between --> segment leftmost and rightmost?
-		this->updateHandsFromNBlobsWithAnalysis(midBodyBlobs, edges);
-	}
-	// case 7: only one blob in the high segment (hands over face? no hands?)
-	else if (highBlobs.size() == 1) {
-		this->getBothHandPositionsFromBlob(highBlobs[0], false, ONLY_HEAD);
-	}
-	// case 8: two blobs in the high segment. (one hand over face?)
-	else if (highBlobs.size() == 2) {
-		// should not be handled, should be taken care of by tracking TODO: check!
-	}
-	// case 9: multiple blobs in the higher segment	
-	else if (highBlobs.size() > 2) {
-		this->updateHandsFromNBlobsByPosition(highBlobs);
-	}
+//	}
+//	// case 2: 2 blobs in the lower segment.
+//	else if (lowerBodyBlobs.size() == 2) {
+//		this->updateHandsFromTwoBlobs(lowerBodyBlobs[0], lowerBodyBlobs[1]);
+//	}
+//	// case 3: more blobs in the lower segment.
+//	else if (lowerBodyBlobs.size() > 2) {
+//		this->updateHandsFromNBlobsWithAnalysis(lowerBodyBlobs, edges);
+//	}
+//	// case 4: one blob in the middle segment
+//	else if (midBodyBlobs.size() == 1) {
+//		this->getBothHandPositionsFromBlob(midBodyBlobs[0]);
+//	}
+//	// case 5: two blobs in the middle segment.
+//	else if (midBodyBlobs.size() == 2) {
+//		this->updateHandsFromTwoBlobs(midBodyBlobs[0], midBodyBlobs[1]);
+//	}
+//	// case 6: mote than 2 blobs in the middle segment
+//	else if (midBodyBlobs.size() > 2) {
+//		// case 1:
+//		// hands on the side, something in between --> segment leftmost and rightmost?
+//		this->updateHandsFromNBlobsWithAnalysis(midBodyBlobs, edges);
+//	}
+//	// case 7: only one blob in the high segment (hands over face? no hands?)
+//	else if (highBlobs.size() == 1) {
+//		this->getBothHandPositionsFromBlob(highBlobs[0], false, ONLY_HEAD);
+//	}
+//	// case 8: two blobs in the high segment. (one hand over face?)
+//	else if (highBlobs.size() == 2) {
+//		// should not be handled, should be taken care of by tracking TODO: check!
+//	}
+//	// case 9: multiple blobs in the higher segment
+//	else if (highBlobs.size() > 2) {
+//		this->updateHandsFromNBlobsByPosition(highBlobs);
+//	}
 
-	// solve for the hands
-	this->leftHand.solve( gray, grayPrev, this->skinMask, blobs, movementMap);
-	this->rightHand.solve(gray, grayPrev, this->skinMask, blobs, movementMap);
+//	// solve for the hands
+//	this->leftHand.solve( gray, grayPrev, this->skinMask, blobs, movementMap);
+//	this->rightHand.solve(gray, grayPrev, this->skinMask, blobs, movementMap);
 
-	// handle possible intersections of the hands
-	this->handleIntersections();
+//	// handle possible intersections of the hands
+//	this->handleIntersections();
 
-	// finalize the position
-	this->leftHand.finalize( this->skinMask, movementMap);
-	this->rightHand.finalize(this->skinMask, movementMap);
+//	// finalize the position
+//	this->leftHand.finalize( this->skinMask, movementMap);
+//	this->rightHand.finalize(this->skinMask, movementMap);
+//}
+
+void HandDetector::detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm, cv::Mat& faceMat) {
+    skinMask.copyTo(this->skinMask);
+
+    // get an estimate for the center based on the face.
+    int centerX = face.x + 0.5 * face.width;
+
+    // set the cm->pixel conversion for the hands as well.
+    this->cmInPixels = 1.0 / pixelSizeInCm;
+    this->leftHand.cmInPixels = this->cmInPixels;
+    this->rightHand.cmInPixels = this->cmInPixels;
+
+    // important. These are used for vertical segmentation of blobs.
+    int bottomFace = face.y + face.height;
+    int lowerBodyHalf = 0.6 * bottomFace + 0.4 * this->frameHeight;
+    int hips = lowerBodyHalf + bottomFace;
+
+    int bottomFaceK = bottomFace;
+    int centerXK = centerX;
+
+    // give the bottom face information to the hands.
+    this->leftHand.faceCoverageThreshold = 0.6 * bottomFace + 0.4 * this->frameHeight;;
+    this->rightHand.faceCoverageThreshold = 0.4 * bottomFace + 0.6 * this->frameHeight;;
+
+#ifdef DEBUG
+    cv::cvtColor(this->skinMask, this->rgbSkinMask, CV_GRAY2RGB);
+    int leftX = centerX - 50 * cmInPixels;
+    int rightX = centerX + 50 * cmInPixels;
+    cv::line(this->rgbSkinMask, cv::Point(centerX, 0), cv::Point(centerX, this->frameHeight),CV_RGB(255, 0, 0));
+    cv::line(this->rgbSkinMask, cv::Point(leftX, 0),   cv::Point(leftX, this->frameHeight),CV_RGB(255, 0, 255));
+    cv::line(this->rgbSkinMask, cv::Point(rightX, 0),  cv::Point(rightX, this->frameHeight),CV_RGB(255, 0, 255));
+    cv::line(this->rgbSkinMask, cv::Point(0, bottomFace),cv::Point(this->frameWidth, bottomFace),CV_RGB(255, 0, 0));
+    cv::line(this->rgbSkinMask, cv::Point(0, lowerBodyHalf), cv::Point(this->frameWidth, lowerBodyHalf), CV_RGB(255, 255, 0));
+#endif
+
+    // we detect contours twice, once to draw in full, once to detect. This is done to avoid gaps in contours or contours in contours
+    cv::Mat filledContours;
+    skinMask.copyTo(filledContours);
+    std::vector<std::vector<cv::Point>> contours;
+    std::vector<cv::Vec4i> hierarchy;
+
+    // first find.
+    cv::findContours(filledContours, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+
+    // 36cm^2 --> decent hand size measurement
+    double minContour = 6 * 6 * cmInPixels * cmInPixels;
+
+    // draw first pass
+    for (int i = 0; i < contours.size(); i++) {
+        if (cv::contourArea(contours[i]) > minContour) {
+            cv::drawContours(filledContours, contours, i, 255, CV_FILLED, 8, hierarchy, 0, cv::Point());
+        }
+    }
+
+    dilate(filledContours, filledContours);
+    erode(filledContours, filledContours);
+
+    // start seconds pass
+    contours.clear();
+    hierarchy.clear();
+    cv::findContours(filledContours, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+
+    // mask to remove faces and other irrelevant blobs from the internal skinmask. Is trained over time.
+    cv::Mat highBlobsMask = cv::Mat::zeros(this->skinMask.rows, this->skinMask.cols, this->skinMask.type()); // all 0
+    // create a mat for the edgemask.
+    cv::Mat edgeMask;
+    cv::Mat movementSkinMask;
+
+    // analyze all blobs
+    int rangeLeftX = this->frameWidth;
+    int rangeRightX = 0;
+    std::vector<BlobInformation> lowerBodyBlobs;
+    std::vector<BlobInformation> midBodyBlobs;
+    std::vector<BlobInformation> highBlobs;
+    std::vector<BlobInformation> blobs;
+    for (int i = 0; i < contours.size(); i++) {
+        if (cv::contourArea(contours[i]) > minContour) {
+            cv::Point lowestPoint(0, 0);
+            cv::Point leftMostPoint(this->frameWidth, 0);
+            cv::Point rightMostPoint(0, 0);
+            cv::Point highestPoint(this->frameWidth, this->frameHeight);
+            for (int j = 0; j < contours[i].size(); j++) {
+                if (contours[i][j].y > lowestPoint.y)
+                    lowestPoint = contours[i][j];
+                if (contours[i][j].y < highestPoint.y)
+                    highestPoint = contours[i][j];
+                if (contours[i][j].x < leftMostPoint.x)
+                    leftMostPoint = contours[i][j];
+                if (contours[i][j].x > rightMostPoint.x)
+                    rightMostPoint = contours[i][j];
+            }
+            if (leftMostPoint.x < rangeLeftX)
+                rangeLeftX = leftMostPoint.x;
+            if (rightMostPoint.x > rangeRightX)
+                rangeRightX = rightMostPoint.x;
+
+            auto moment = cv::moments(contours[i], false);
+            auto midPoint = cv::Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
+
+            BlobInformation blob;
+            blob.index = i;
+            blob.top = highestPoint;
+            blob.left = leftMostPoint;
+            blob.right = rightMostPoint;
+            blob.bottom = lowestPoint;
+            blob.center = midPoint;
+            blob.type = OTHER;
+            blob.contour = contours[i];
+
+            auto color = CV_RGB(255, 0, 0);
+            // the highest point is below the chest line
+            if (highestPoint.y > lowerBodyHalf) {
+                color = CV_RGB(255, 255, 0);  // yellow
+                lowerBodyBlobs.push_back(blob);
+                blob.type = LOW;
+            }
+            // the lowest point is below the chest line and the highest below the chin line
+            else if (lowestPoint.y > lowerBodyHalf && highestPoint.y > bottomFace) {
+                color = CV_RGB(255, 100, 50); // orange
+                midBodyBlobs.push_back(blob);
+                blob.type = MEDIUM;
+            }
+            // the lowest and highest points are below the chin and above the chest line
+            else if (lowestPoint.y > bottomFace && highestPoint.y > bottomFace) {
+                color = CV_RGB(150, 50, 150); // dark purple
+                midBodyBlobs.push_back(blob);
+                blob.type = MEDIUM;
+            }
+            // only the lowest point is below the chest line, the highest is above the chin line... stupid blob
+            else if (lowestPoint.y > lowerBodyHalf && highestPoint.y < bottomFace) {
+                color = CV_RGB(255, 0, 0); // red
+                blob.type = HIGH;
+                  highBlobs.push_back(blob);
+            }
+            // the highest point is above the chin line
+            else  if (highestPoint.y < bottomFace) {
+                color = CV_RGB(150, 00, 0);  // dark red
+                blob.type = HIGH;
+                highBlobs.push_back(blob);
+
+                cv::drawContours(highBlobsMask, contours, i, 255, CV_FILLED, 8, hierarchy, 0, cv::Point());
+            }
+#ifdef DEBUG
+            // draw the blobs on the rgb skin mask we use for debugging.
+            cv::drawContours(this->rgbSkinMask, contours, i, color, 2, 8, hierarchy, 0, cv::Point());
+#endif
+            blobs.push_back(blob);
+        }
+    }
+
+    // improve the estimate of the centerX
+    centerX = 0.5 * (centerX + 0.5 * (rangeLeftX + rangeRightX));
+
+#ifdef DEBUG
+    cv::line(this->rgbSkinMask, cv::Point(centerX, 0), cv::Point(centerX, this->frameHeight), CV_RGB(255, 255, 0));
+#endif
+
+
+    // update the face mask and process it
+    this->updateFaceMask(highBlobsMask);
+    cv::subtract(this->skinMask, this->faceMask, this->skinMask);
+
+    // use the updated skin mask to get the edges inside of the blobs
+    cv::bitwise_and(edges, this->skinMask, edgeMask);
+    cv::bitwise_or(this->skinMask, movementMap, movementSkinMask);
+
+    // case 1: 1 blob in the lower segment.
+    if (lowerBodyBlobs.size() == 1) {
+        // if there is one in the lower range and one in the higher range
+        if (midBodyBlobs.size() == 1) { // todo: put back?
+            std::vector<BlobInformation> blobContainer;
+            blobContainer.push_back(lowerBodyBlobs[0]);
+            blobContainer.push_back(midBodyBlobs[0]);
+            this->updateHandsFromNBlobsWithAnalysis(blobContainer, edges);
+        }
+        // if we have one is the lower segment and one in the middle segment, assume these are both hands.
+        else {
+            this->getBothHandPositionsFromBlob(lowerBodyBlobs[0]);
+        }
+
+    }
+    // case 2: 2 blobs in the lower segment.
+    else if (lowerBodyBlobs.size() == 2) {
+        this->updateHandsFromTwoBlobs(lowerBodyBlobs[0], lowerBodyBlobs[1]);
+    }
+    // case 3: more blobs in the lower segment.
+    else if (lowerBodyBlobs.size() > 2) {
+        this->updateHandsFromNBlobsWithAnalysis(lowerBodyBlobs, edges);
+    }
+    // case 4: one blob in the middle segment
+    else if (midBodyBlobs.size() == 1) {
+        this->getBothHandPositionsFromBlob(midBodyBlobs[0]);
+    }
+    // case 5: two blobs in the middle segment.
+    else if (midBodyBlobs.size() == 2) {
+        this->updateHandsFromTwoBlobs(midBodyBlobs[0], midBodyBlobs[1]);
+    }
+    // case 6: mote than 2 blobs in the middle segment
+    else if (midBodyBlobs.size() > 2) {
+        // case 1:
+        // hands on the side, something in between --> segment leftmost and rightmost?
+        this->updateHandsFromNBlobsWithAnalysis(midBodyBlobs, edges);
+    }
+    // case 7: only one blob in the high segment (hands over face? no hands?)
+    else if (highBlobs.size() == 1) {
+        this->getBothHandPositionsFromBlob(highBlobs[0], false, ONLY_HEAD);
+    }
+    // case 8: two blobs in the high segment. (one hand over face?)
+    else if (highBlobs.size() == 2) {
+        // should not be handled, should be taken care of by tracking TODO: check!
+    }
+    // case 9: multiple blobs in the higher segment
+    else if (highBlobs.size() > 2) {
+        this->updateHandsFromNBlobsByPosition(highBlobs);
+    }
+
+    // solve for the hands
+    this->leftHand.solve( gray, grayPrev, this->skinMask, blobs, movementMap);
+    this->rightHand.solve(gray, grayPrev, this->skinMask, blobs, movementMap);
+
+    // handle possible intersections of the hands
+    this->handleIntersections();
+
+    // finalize the position
+    this->leftHand.finalize( this->skinMask, movementMap);
+    this->rightHand.finalize(this->skinMask, movementMap);
+
+
 }
-
 
 /*
 * Draw the hand icons on the canvas
