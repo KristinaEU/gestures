@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+   <FileVersion major="1" minor="6" />
+   <Project>
+      <Option title="MercuryGestures" />
+      <Option makefile_is_custom="1" />
+      <Option compiler="gcc" />
+      <Option virtualFolders="CMake Files\;" />
+      <Build>
+      <Target title="all">
+         <Option working_dir="/home/ludo/projects/MercuryGestures" />
+         <Option type="4" />
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 all" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="edit_cache">
+         <Option working_dir="/home/ludo/projects/MercuryGestures" />
+         <Option type="4" />
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 edit_cache" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="rebuild_cache">
+         <Option working_dir="/home/ludo/projects/MercuryGestures" />
+         <Option type="4" />
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 rebuild_cache" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="MercuryGestures">
+         <Option output="/home/ludo/projects/MercuryGestures/MercuryGestures" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/ludo/projects/MercuryGestures" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DUNICODE" />
+            <Add option="-D_UNICODE" />
+            <Add option="-DNDEBUG" />
+            <Add option="-D_CONSOLE" />
+            <Add directory="/home/ludo/projects/MercuryGestures/$(OPENCV_DIR)/../../include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 MercuryGestures" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="MercuryGestures/fast">
+         <Option output="/home/ludo/projects/MercuryGestures/MercuryGestures" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/ludo/projects/MercuryGestures" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add option="-DUNICODE" />
+            <Add option="-D_UNICODE" />
+            <Add option="-DNDEBUG" />
+            <Add option="-D_CONSOLE" />
+            <Add directory="/home/ludo/projects/MercuryGestures/$(OPENCV_DIR)/../../include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 MercuryGestures/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/ludo/projects/MercuryGestures/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      </Build>
+      <Unit filename="/home/ludo/projects/MercuryGestures/ActivityGraph.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/ActivityGraph.h">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/EdgeDetector.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/EdgeDetector.h">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/FaceDetector.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/FaceDetector.h">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/Hand.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/HandDetector.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/HandDetector.h">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/MercuryCore.h">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/MovementDetector.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/MovementDetector.h">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/SkinDetector.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/SkinDetector.h">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/main.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/old.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/util.cpp">
+         <Option target="MercuryGestures"/>
+      </Unit>
+      <Unit filename="/home/ludo/projects/MercuryGestures/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\" />
+      </Unit>
+   </Project>
+</CodeBlocks_project_file>
