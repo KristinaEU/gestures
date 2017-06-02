@@ -11,7 +11,7 @@ bool first = true;
 * Run the algorithm on this video feed
 */
 
-int tekenMannequin(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& drawMat, bool extend, int& LH, int& RH ) {
+int drawPuppet(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& drawMat, bool extend, int& LH, int& RH ) {
     // init the classes
 
     double pixelSizeInCm = 0.25;
@@ -27,8 +27,8 @@ int tekenMannequin(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::M
     int hips = lowerBodyHalf + face.height * 1.1;
     int leftX = centerX + face.width;
     int rightX = centerX - face.width;
-    cv::Point elleboogL = cv::Point(leftX + face.width/2.5, lowerBodyHalf+5 * cmInPixels);
-    cv::Point elleboogR = cv::Point(rightX - face.width/2.5, lowerBodyHalf+5 * cmInPixels);
+    cv::Point leftElbow = cv::Point(leftX + face.width/2.5, lowerBodyHalf+5 * cmInPixels);
+    cv::Point rightElbow = cv::Point(rightX - face.width/2.5, lowerBodyHalf+5 * cmInPixels);
 
     //cv::Rect rec5 = face;
     cv::Point facePoint(face.x+face.width/2, face.y+face.height/2);
@@ -40,10 +40,10 @@ int tekenMannequin(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::M
     cv::line(drawMat, cv::Point(0, lowerBodyHalf), cv::Point(frameWidth, lowerBodyHalf), CV_RGB(255, 152, 0));
     cv::line(drawMat, cv::Point(0, hips), cv::Point(300, hips), CV_RGB(255, 255, 0));
 
-    cv::line(drawMat, cv::Point(rightX, bottomFace), elleboogR, CV_RGB(255, 152, 0));
-    cv::line(drawMat, cv::Point(leftX, bottomFace), elleboogL, CV_RGB(255, 255, 0));
-    cv::line(drawMat, elleboogL, leftHand, CV_RGB(100, 152, 152));
-    cv::line(drawMat, elleboogR, rightHand, CV_RGB(100, 255, 152));
+    cv::line(drawMat, cv::Point(rightX, bottomFace), rightElbow, CV_RGB(255, 152, 0));
+    cv::line(drawMat, cv::Point(leftX, bottomFace), leftElbow, CV_RGB(255, 255, 0));
+    cv::line(drawMat, leftElbow, leftHand, CV_RGB(100, 152, 152));
+    cv::line(drawMat, rightElbow, rightHand, CV_RGB(100, 255, 152));
     cv::circle(drawMat, facePoint, face.width/2, CV_RGB(255, 0, 0) ,1,8,0);
 
     bool dc = false;
@@ -146,40 +146,40 @@ int tekenMannequin(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::M
         if (recRU.contains(leftHand)) {
             cv::putText(drawMat, "LeftHand, Right upperarm", cv::Point(recRU.x, recRU.y + 10), 0, 0.4, CV_RGB(255, 255, 255), 1);
             cv::rectangle(drawMat, recRU, CV_RGB(125, 125, 125), 1, 8, 0 );
-            LH=6;
+            LH=5;
         }
         if (recRL.contains(leftHand)) {
             cv::putText(drawMat, "LeftHand, Right lowerarm", cv::Point(recRL.x, recRL.y + 10), 0, 0.4, CV_RGB(255, 255, 255), 1);
             cv::rectangle(drawMat, recRL, CV_RGB(125, 125, 125), 1, 8, 0 );
-            LH=7;
+            LH=6;
         }
         if (recLU.contains(rightHand)) {
             cv::putText(drawMat, "RightHand, Left upperarm", cv::Point(recLU.x, recLU.y + 10), 0, 0.4, CV_RGB(255, 255, 255), 1);
             cv::rectangle(drawMat, recLU, CV_RGB(125, 125, 125), 1, 8, 0 );
-            RH=6;
+            RH=7;
         }
         if (recLL.contains(rightHand)) {
             cv::putText(drawMat, "RightHand, Left lowerarm", cv::Point(recLL.x, recLL.y + 10), 0, 0.4, CV_RGB(255, 255, 255), 1);
             cv::rectangle(drawMat, recLL, CV_RGB(125, 125, 125), 1, 8, 0 );
-            RH=7;
+            RH=8;
         }
 
         if (face.contains(leftHand)) {
             cv::putText(drawMat, "LeftHand, Face", cv::Point(face.x, face.y), 0, 0.4, CV_RGB(255, 0, 0), 1);
             cv::rectangle(drawMat, face, CV_RGB(255, 0, 0), 1, 8, 0 );
-            LH=8;
+            LH=9;
         }
         if (face.contains(rightHand)) {
             cv::putText(drawMat, "RightHand, Face", cv::Point(face.x, face.y), 0, 0.4, CV_RGB(255, 0, 0), 1);
             cv::rectangle(drawMat, face, CV_RGB(255, 0, 0), 1, 8, 0 );
-            RH=8;
+            RH=9;
         }
     }
 
     return 1;
 }
 
-int zoekArmen(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
+int findArms(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
 
     cv::Mat canny;
     double pixelSizeInCm = 0.25;
@@ -198,15 +198,15 @@ int zoekArmen(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& b
     int rightX = centerX - faceRect.width;
     cv::putText(drawMat, joinString(" rightX ", rightX) + joinString(" leftX ", leftX) + joinString(" face width ", faceRect.width) + joinString(" frame/face ", frameHeight/faceRect.width)+ joinString(" headspace ", faceRect.y), cv::Point(0, frameHeight - 20), 0, 0.4, CV_RGB(255, 5, 0), 1);
 
-    cv::Point elleboogL = cv::Point(leftX + faceRect.width/2.5, lowerBodyHalf + faceRect.width/2);
-    cv::Point elleboogR = cv::Point(rightX - faceRect.width/2.5, lowerBodyHalf + faceRect.width/2);
+    cv::Point leftElbow = cv::Point(leftX + faceRect.width/2.5, lowerBodyHalf + faceRect.width/2);
+    cv::Point rightElbow = cv::Point(rightX - faceRect.width/2.5, lowerBodyHalf + faceRect.width/2);
     cv::Point shoulderL = cv::Point(leftX, shoulderHeight);
     cv::Point shoulderR = cv::Point(rightX, shoulderHeight);
 
     unsigned char *input = (unsigned char*)(canny.data);
 
-    // zoek rond linker schouder en bepaal een gemiddeld punt
-    // LINKER SCHOUDER
+    // Find around the left Shoulder and determine the mean point
+    // LEFT SHOULDER
     cv::Rect rec1(shoulderL.x - 10, shoulderL.y - 10, 40, 40);
     cv::rectangle(drawMat, rec1, CV_RGB(255, 0, 0), 1, 8, 0 );
 
@@ -229,8 +229,8 @@ int zoekArmen(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& b
     cv::Point LST = cvPoint(avX, avY); //Left Shoulder Top
     cv::circle(drawMat, LST, 4, CV_RGB(200, 125, 255) ,1,8,0);
 
-    // zoek rond rechter schouder en bepaal een gemiddeld punt
-    // RECHTER SCHOUDER
+    // Find around the right Shoulder and determine the mean point
+    // RIGHT SHOULDER
     rec1 = cv::Rect(shoulderR.x - 30, shoulderR.y - 10, 40, 40);
     cv::rectangle(drawMat, rec1, CV_RGB(255, 0, 0), 1, 8, 0 );
 
@@ -251,14 +251,14 @@ int zoekArmen(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& b
     cv::Point RST = cvPoint(avX, avY); //Left Shoulder Top
     cv::circle(drawMat, RST, 4, CV_RGB(0, 255, 0) ,1,8,0);
 
-    // zoek alle punten in een zw mat rond het gekozen elleboog punt  die wit (groter dan 0) zijn
-    // LINKER ELLEBOOG
-    rec1 = cv::Rect(elleboogL.x - 20, elleboogL.y - 10, 40, 40);
+    //Find all points around the square on the chosen elbow that is white (larger than 0)
+    // LEFT Elbow
+    rec1 = cv::Rect(leftElbow.x - 20, leftElbow.y - 10, 40, 40);
     cv::rectangle(drawMat, rec1, CV_RGB(255, 0, 0), 1, 8, 0 );
 
     avX=avY=nrX=nrY=0;
-    for(int j = elleboogL.y - 10; j < elleboogL.y + 30; j++){
-        for(int i = elleboogL.x + 20; i > elleboogL.x - 20; i--){
+    for(int j = leftElbow.y - 10; j < leftElbow.y + 30; j++){
+        for(int i = leftElbow.x + 20; i > leftElbow.x - 20; i--){
             b = input[canny.cols * j + i ] ; //g = input[img.cols * j + i + 1]; //r = input[img.cols * j + i + 2];
             if (b > 0) {
                 nrX++; nrY++;
@@ -273,14 +273,14 @@ int zoekArmen(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& b
     cv::Point LE = cvPoint(avX, avY); //Left Elbow
     cv::circle(drawMat, LE, 4, CV_RGB(0, 255, 0) ,1,8,0);
 
-    // zoek alle punten in een zw mat rond het gekozen elleboog punt  die wit (groter dan 0) zijn
-    // RECHTER ELLEBOOG
-    rec1=cv::Rect(elleboogR.x - 20, elleboogR.y - 10, 40, 40);
+    //Find all points around the square on the chosen elbow that is white (larger than 0)
+    // RIGHT Elbow
+    rec1=cv::Rect(rightElbow.x - 20, rightElbow.y - 10, 40, 40);
     cv::rectangle(drawMat, rec1, CV_RGB(255, 0, 0), 1, 8, 0 );
 
     avX=avY=nrX=nrY=0;
-    for(int j = elleboogR.y - 10; j < elleboogR.y + 30; j++){
-        for(int i = elleboogR.x - 20; i < elleboogR.x + 20; i++){
+    for(int j = rightElbow.y - 10; j < rightElbow.y + 30; j++){
+        for(int i = rightElbow.x - 20; i < rightElbow.x + 20; i++){
             b = input[canny.cols * j + i ] ; //g = input[img.cols * j + i + 1]; //r = input[img.cols * j + i + 2];
             if (b > 0) {
                 nrX++; nrY++;
@@ -296,10 +296,10 @@ int zoekArmen(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& b
     cv::circle(drawMat, RE, 4, CV_RGB(255, 255, 0) ,1,8,0);
 
    if (LE.x == 0 && LE.y == 0) {
-        LE = elleboogL;
+        LE = leftElbow;
     }
     if (RE.x == 0 && RE.y == 0) {
-        RE = elleboogR;
+        RE = rightElbow;
     }
     if (LST.x == 0 && LST.y == 0) {
         LST = cv::Point(leftX, bottomFace);
@@ -315,7 +315,7 @@ int zoekArmen(cv::Point leftHand, cv::Point rightHand, cv::Rect face, cv::Mat& b
     return 0;
 }
 
-int zoekOgen(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat, bool extend) {
+int findEyes(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat, bool extend) {
     // init the classes
 
     cv::Mat canny;
@@ -325,8 +325,8 @@ int zoekOgen(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat, bool extend) {
     int stepY = 20;
     int stepX = 30;
 
-    // zoek in de bovenste helft van het gezicht naar de ogen
-    // LINKER OOG
+    //Dind in the uppaerhalf of the face.
+    //LEFT EYE
     cv::Rect recLeft(face.x + face.width/2, face.y + face.height/2 - stepY, stepX, stepY);
     cv::rectangle(drawMat, recLeft, CV_RGB(255, 0, 0), 1, 8, 0 );
 
@@ -352,8 +352,9 @@ int zoekOgen(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat, bool extend) {
     cv::circle(drawMat, leftEye, 4, CV_RGB(150, 150, 150),2,8,0);
 
 
-    // zoek in de bovenste helft van het gezicht naar de ogen
-    // RECHTER OOG
+
+    //Dind in the uppaerhalf of the face.
+    //RIGHT EYE
     cv::Rect recRight(face.x + face.width/2 - stepX, face.y + face.height/2 - stepY, stepX, stepY);
     cv::rectangle(drawMat, recRight, CV_RGB(255, 0, 0), 1, 8, 0 );
 
@@ -380,7 +381,7 @@ int zoekOgen(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat, bool extend) {
     cv::circle(drawMat, rightEye, 4, CV_RGB(150, 150, 150),2,8,0);
 
 
-    // eventueel correctie als ogen niet worden gevonden
+    // Optional correction if eyes arend't found
     if (rightEye.x == 0 && rightEye.y == 0) {
         //rightEye = elleboogR;
     }
@@ -392,7 +393,7 @@ int zoekOgen(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat, bool extend) {
     return 0;
 }
 
-int hoofdTiltRotate(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
+int headTiltRotate(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
     // init the classes
 
     cv::Mat canny;
@@ -403,8 +404,8 @@ int hoofdTiltRotate(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
     int stepX = 30;
     bool extend = false;
 
-    // zoek naast de bovenste helft van het gezicht naar randen van het hoofd
-    // TOP LINKS
+    // Find in upper part of the face the border of the head
+    // TOP LEFT
     cv::Rect recTopLeft(face.x + face.width - stepX, face.y, stepX, stepY);
     cv::rectangle(drawMat, recTopLeft, CV_RGB(255, 0, 0), 1, 8, 0 );
 
@@ -430,8 +431,8 @@ int hoofdTiltRotate(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
     cv::circle(drawMat, topLeftPart, 4, CV_RGB(150, 150, 150),2,8,0);
 
 
-    // zoek naast de bovenste helft van het gezicht naar randen van het hoofd
-    // TOP RECHTS
+    // Find in upper part of the face the border of the head
+    // TOP RIGHT
     cv::Rect recTopRight(face.x, face.y, stepX, stepY);
     cv::rectangle(drawMat, recTopRight, CV_RGB(255, 0, 0), 1, 8, 0 );
 
@@ -458,8 +459,8 @@ int hoofdTiltRotate(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
     cv::circle(drawMat, topRightPart, 4, CV_RGB(150, 150, 150),2,8,0);
 
 
-    // zoek naast de onderste helft van het gezicht naar randen van het hoofd
-    // Onder LINKS
+    // Find in lower part of the face the border of the head
+    // LOWER LEFT
     cv::Rect recLowLeft(face.x + face.width - stepX, face.y + face.height/2, stepX, stepY);
     cv::rectangle(drawMat, recLowLeft, CV_RGB(255, 0, 0), 1, 8, 0 );
 
@@ -483,8 +484,8 @@ int hoofdTiltRotate(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
     cv::circle(drawMat, lowLeftPart, 4, CV_RGB(150, 150, 150),2,8,0);
 
 
-    // zoek naast de onderste helft van het gezicht naar randen van het hoofd
-    // Onder RECHTS
+    // Find in lower part of the face the border of the head
+    // LOWER RIGHT
     cv::Rect recLowRight(face.x, face.y + face.height/2, stepX, stepY);
     cv::rectangle(drawMat, recLowRight, CV_RGB(255, 0, 0), 1, 8, 0 );
 
@@ -510,22 +511,13 @@ int hoofdTiltRotate(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
     lowRightPart = cvPoint(avX, avY);
     cv::circle(drawMat, lowRightPart, 4, CV_RGB(150, 150, 150),2,8,0);
 
-    // eventueel correctie als ogen niet worden gevonden
-    //if (rightEye.x == 0 && rightEye.y == 0) {
-        //rightEye = elleboogR;
-    //}
-    //if (leftEye.x == 0 && leftEye.y == 0) {
-        //leftEye = cv::Point(rightX, bottomFace);
-    //}
-    //cv::circle(drawMat, rightEye, 1, CV_RGB(255, 0, 0) ,1,8,0);
-    //cv::circle(drawMat, leftEye, 1, CV_RGB(255, 0, 0) ,1,8,0);
     return 0;
 }
 
 
 int run(cv::VideoCapture& cap, int fps) {
 	// init the classes
-	
+
 	SkinDetector  skinDetector;
 	EdgeDetector  edgeDetector;
 	HandDetector  handDetector(fps);
@@ -538,16 +530,16 @@ int run(cv::VideoCapture& cap, int fps) {
 
 	// setup the base collection of cvMats
     cv::Mat rawFrame, frame, gray, grayPrev, faceMat, roiMask, temporalSkinMask;
-    cv::Mat wit, bw, canny;
+    cv::Mat white, bw, canny;
 
     int frameHeightMax = 300;
-	
+
 	BodyRects body;
 
 	int frameIndex = 0;
 	bool initialized = false;
     bool startOk = false;
-	
+
 
 	// DEBUG
 	int waitTime = 2;
@@ -572,7 +564,7 @@ int run(cv::VideoCapture& cap, int fps) {
 		// resize image
 		double resizeFactor = frameHeightMax / double(frameHeight);
 		cv::Size size(std::round(frameWidth * resizeFactor), frameHeightMax);
-		cv::resize(rawFrame, frame, size); 
+		cv::resize(rawFrame, frame, size);
 		frameWidth = frame.cols;
 		frameHeight = frame.rows;
 
@@ -603,12 +595,12 @@ int run(cv::VideoCapture& cap, int fps) {
 			auto face = &(faceDetector.face.rect);
 			skinDetector.detect(*face, frame, initialized, (3.0 / pixelSizeInCm) * 4);
 			edgeDetector.detect(gray);
-			
+
 			if (initialized) {
                 temporalSkinMask = skinDetector.getMergedMap();
                 roiMask = cv::Mat::zeros(temporalSkinMask.rows, temporalSkinMask.cols, temporalSkinMask.type()); // all 0
 
-				// get an initial motion estimate based on the temporal skin mask alone. This is used 
+				// get an initial motion estimate based on the temporal skin mask alone. This is used
 				// in the hand detection
 				movementDetector.detect(gray, grayPrev);
 				movementDetector.mask(temporalSkinMask);
@@ -648,7 +640,7 @@ int run(cv::VideoCapture& cap, int fps) {
 				activityGraph.setValue("Skin masked Movement", movementDetector.value);
 				activityGraph.setValue("ROI masked Movement", ROImovementDetector.value);
 				activityGraph.draw(frame);
-				
+
                 //movementDetector.show("maskedSkinMovement");
                 //skinDetector.show();
                 edgeDetector.show();
@@ -656,18 +648,18 @@ int run(cv::VideoCapture& cap, int fps) {
 
                 // ADDED for mannequin en handposition labels
                 int codeLH=0, codeRH=0, codeGesture=0;
-                faceMat.copyTo(wit);
-                wit.setTo(cv::Scalar(255,255,255));
+                faceMat.copyTo(white);
+                white.setTo(cv::Scalar(255,255,255));
                 cv::Point leftHand = handDetector.leftHand.position;
                 cv::Point rightHand = handDetector.rightHand.position;
 
                 // start schouders en ellebogen zoeken
                 cv::Rect faceRect = faceDetector.face.rect;
-                zoekArmen(leftHand, rightHand, faceRect, frame, wit);
-                zoekOgen(faceRect, frame, wit, true );
-                hoofdTiltRotate(faceRect, frame, wit);
-                tekenMannequin(leftHand, rightHand, faceRect, wit, true, codeLH, codeRH);
-                cv::imshow("wit", wit);
+                findArms(leftHand, rightHand, faceRect, frame, white);
+                findEyes(faceRect, frame, white, true );
+                headTiltRotate(faceRect, frame, white);
+                drawPuppet(leftHand, rightHand, faceRect, white, true, codeLH, codeRH);
+                cv::imshow("white", white);
                 // ADDED for mannequin en handposition labels
 
                 bool leftHandMissing = false;
@@ -721,7 +713,7 @@ int run(cv::VideoCapture& cap, int fps) {
 
         cv::imshow("DebugGUI", frame);
         if ((initialized && first) || startOk) {
-            cv::moveWindow("wit", 2000, 0);
+            cv::moveWindow("white", 2000, 0);
             cv::moveWindow("face", 2000, 340);
             cv::moveWindow("DebugGUI", 2450, 340);
             cv::moveWindow("debugMapHands", 2750,0);
