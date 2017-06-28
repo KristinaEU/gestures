@@ -14,7 +14,7 @@ FaceDetector::~FaceDetector() {}
 bool FaceDetector::setup() {
 	if (!this->face_cascade.load(this->face_cascade_name)) {
 		std::cerr << "--(!)Error loading face cascade" << std::endl;
-		return false; 
+		return false;
 	};
 	return true;
 }
@@ -137,7 +137,7 @@ bool FaceDetector::detect(cv::Mat& gray) {
 			return true;
 		}
 		return false;
-	}	
+	}
 }
 
 void FaceDetector::setVideoProperties(int frameWidth, int frameHeight) {

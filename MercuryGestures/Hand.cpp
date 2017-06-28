@@ -121,7 +121,7 @@ one for the current and one for the previous position.
 void Hand::addResultToMask(cv::Mat& canvas) {
 	int p0_index = this->positionIndex;
 	int p1_index = this->getPreviousIndex(p0_index);
-	
+
 	if (this->positionHistory[p1_index].x == 0 && this->positionHistory[p1_index].y == 0) {
 		return;
 	}
@@ -144,16 +144,16 @@ void Hand::draw(cv::Mat& canvas) {
 		cv::putText(canvas, this->leftHand ? "L" : "R", this->position, 0, 0.8, this->color, 3);
 
 #ifdef DEBUG
-		
+
 		/*
 		// draw the optical flow markers and their states
 		if (this->opticalFlowPoint.x != 0) {
 			cv::circle(canvas, this->opticalFlowPoint, 25, CV_RGB(255, 0, 0), 2);
 			for (int i = 0; i < this->opticalFlowPointsPrev.size(); i++) {
 				if (this->opticalFlowStatus[i] == 1) {
-					if (this->opticalFlowSuccess[i]) 
+					if (this->opticalFlowSuccess[i])
 						cv::line(canvas, this->opticalFlowPointsPrev[i], this->opticalFlowPoints[i], CV_RGB(0, 255, 0), 1);
-					else 
+					else
 						cv::line(canvas, this->opticalFlowPointsPrev[i], this->opticalFlowPoints[i], CV_RGB(255, 0, 0), 1);
 				}
 			}
@@ -186,7 +186,7 @@ void Hand::drawTrace(cv::Mat& canvas, std::vector<cv::Point>& positions, int sta
 	// since the history is a deck and we want to draw from oldest to newest, we index forward instead of backward.
 	int index = (startIndex + 1) % traceSize;
 
-	// get step colors 
+	// get step colors
 	double colorSteps = double(traceSize);
 	double rStep = r / colorSteps;
 	double gStep = g / colorSteps;
@@ -195,7 +195,7 @@ void Hand::drawTrace(cv::Mat& canvas, std::vector<cv::Point>& positions, int sta
 
 	// mask for nice drawing (fade out effects)
 	cv::Mat traceMap = cv::Mat::zeros(canvas.rows, canvas.cols, canvas.type());
-	cv::Mat traceMask = cv::Mat::zeros(canvas.rows, canvas.cols, canvas.type());	
+	cv::Mat traceMask = cv::Mat::zeros(canvas.rows, canvas.cols, canvas.type());
 
 	// for n steps, we need n-1 lines.
 	for (int i = 0; i < traceSize - 1; i++) {
@@ -216,7 +216,7 @@ void Hand::drawTrace(cv::Mat& canvas, std::vector<cv::Point>& positions, int sta
 
 /*
 * Based on all input this iteration, we will try to find the best estimate for the hand position.
-* We do this by 
+* We do this by
 	- We get an estimate of the new position based on the last location, linear position extrapolation, velocity estimate and optical flow estimate
     - Maximize the area
 	- Refine the result by area optimalization and transversing the blob.
@@ -230,6 +230,7 @@ void Hand::solve(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask, std::vecto
 
 	// search for a position based on optical flow
 	auto lastPosition = this->positionHistory[this->positionIndex]; // still the last one since we have not yet found the final pos.
+
 	// revert to search for a position based on the last known position
 	if (lastPosition.x != 0 && lastPosition.y != 0 && this->invalidState == false) {
 		auto predictedPoint = this->getPredictedPosition(gray, grayPrev, skinMask);
@@ -243,7 +244,7 @@ void Hand::solve(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask, std::vecto
 
 	// reset intersection state
 	this->invalidState = false;
-	
+
 	// we do not want to improve the position if it is not initialized.
 	if (this->position.x != 0 && this->position.y != 0) {
 		// get a search mode based on the location of the blob
@@ -260,7 +261,7 @@ void Hand::solve(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask, std::vecto
 
 
 /*
-* After the solving of the intersections, we use the history to smooth out the position, 
+* After the solving of the intersections, we use the history to smooth out the position,
 store the position and use this position to improve the estimate of the last point.
 */
 void Hand::finalize(cv::Mat& skinMask, cv::Mat& movementMap) {
@@ -289,7 +290,7 @@ void Hand::improvePreviousPoint() {
 	int p0_index = this->positionIndex;
 	int p1_index = this->getPreviousIndex(p0_index);
 	int p2_index = this->getPreviousIndex(p1_index);
-	
+
 	// we do not use this esitmate if the points have not yet been started.
 	if (this->positionHistory[p2_index].x == 0 && this->positionHistory[p2_index].y == 0) {
 		return;
@@ -318,7 +319,7 @@ bool Hand::improveByAreaSearch(cv::Mat& skinMask, cv::Mat& movementMap, cv::Poin
 		cv::circle(*this->rgbSkinMask, position, radius, CV_RGB(0, 100, 30), 4);
 		cv::putText(*this->rgbSkinMask, joinString("q:", int(100 * pointQuality)), position + cv::Point(10, 0), 0, 1, CV_RGB(0, 100, 30), 2);
 #endif
-		// We do a quality check to ensure that the point we are in is not crap. 
+		// We do a quality check to ensure that the point we are in is not crap.
 		// If it is we need to ignore the search and get the estimate.
 		if (pointQuality > 0.1) {
 			this->position = this->lookAround(position, skinMask, maxIterations, stepSize, radius, FREE_SEARCH, 50);
@@ -330,7 +331,7 @@ bool Hand::improveByAreaSearch(cv::Mat& skinMask, cv::Mat& movementMap, cv::Poin
 
 
 /*
-* We get a position based on a linear extrapolation from the last point. 
+* We get a position based on a linear extrapolation from the last point.
 */
 cv::Point Hand::getPredictedPosition(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask) {
 	int p1_index = this->positionIndex;
@@ -357,7 +358,7 @@ cv::Point Hand::getPredictedPosition(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& 
 	double pointQualityPosition		= this->getPointQuality(predictedPositionPosition,  skinMask);
 	double pointQualityVelocity		= this->getPointQuality(predictedPositionVelocity,  skinMask);
 	double pointQualityOpticalFlow	= this->getPointQuality(predictedOpticalFlow,		skinMask);
-	
+
 	//basic estimate:
 	cv::Point bestPrediction = position_n_1;
 	double pointQuality = pointQualityCurrent;
@@ -506,7 +507,7 @@ SearchMode Hand::getSearchModeFromBlobs(std::vector<BlobInformation>& blobs) {
 	for (int i = 0; i < blobs.size(); i++) {
 		// determine which blob contains our point (bounding box)
 		if (blobs[i].left.x   <= this->position.x &&
-			blobs[i].right.x  >= this->position.x && 
+			blobs[i].right.x  >= this->position.x &&
 			blobs[i].top.y    <= this->position.y &&
 			blobs[i].bottom.y >= this->position.y) {
 
@@ -522,7 +523,7 @@ SearchMode Hand::getSearchModeFromBlobs(std::vector<BlobInformation>& blobs) {
 				else if (blobs[i].type == MEDIUM) {
 					if (height > 40 * this->cmInPixels)
 						return SEARCH_DOWN;
-					else 
+					else
 						return FREE_SEARCH;
 				}
 				else if (blobs[i].type == HIGH) {
@@ -543,7 +544,7 @@ SearchMode Hand::getSearchModeFromBlobs(std::vector<BlobInformation>& blobs) {
 */
 void Hand::improveByCoverage(cv::Mat& skinMask, SearchMode searchMode, int maxIterations, int colorBase) {
 	int stepSize = 3;
-	int radius = 8 * this->cmInPixels; 
+	int radius = 8 * this->cmInPixels;
 
 	// find the new best position
 	cv::putText(*this->rgbSkinMask, joinString("cov ", searchMode) , this->position, 0, 0.5, CV_RGB(255, 0, 0), 1);
@@ -579,7 +580,7 @@ void Hand::improveByDirection(cv::Mat& skinMask, SearchMode searchMode, int maxI
 */
 void Hand::improveUsingHistory(cv::Mat& skinMask, cv::Mat& movementMap) {
 	int historyAverage = 5; // must be lower or equal to this->historySize
-	int index = this->positionIndex; 
+	int index = this->positionIndex;
 	double distanceThreshold = 3 * this->cmInPixels;
 
 	double avgX = 0;
@@ -655,7 +656,7 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 
 	std::vector<double> newValues(vectorSize,0);
 	std::vector<cv::Point> newPositions(vectorSize, cv::Point(0,0));
-	
+
 	std::set<int> positionHistory;
 	for (int i = 0; i < maxIterations; i++) {
 
@@ -677,7 +678,7 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 			// . . .
 			// x o .
 			// . . .
-	
+
 
 			//newValues[0] = this->shiftPosition(space.mat, newPositions[0], maxPos, -stepSize, stepSize, radius);
 			//newValues[1] = this->shiftPosition(space.mat, newPositions[1], maxPos, -stepSize, -stepSize, radius);
@@ -696,7 +697,7 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 			//newValues[2] = this->shiftPosition(space.mat, newPositions[2], maxPos, stepSize, 2 * -stepSize, radius);
 			//newValues[3] = this->shiftPosition(space.mat, newPositions[3], maxPos, stepSize, 2 * stepSize, radius);
 			newValues[0] = this->shiftPosition(space.mat, newPositions[0], maxPos, stepSize, 0, radius);
-			
+
 		}
 		else if (searchMode == SEARCH_LEFT) {
 			// WHEN SEARCH_LEFT IS ON, WE SEARCH ON THE RIGHT SIDE OF THE SCREEN -> LEFT FOR THE PERSON
@@ -750,7 +751,7 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 			newValues[7] = this->shiftPosition(space.mat, newPositions[7], maxPos, 0, -stepSize, radius);
 		}
 
-	
+
 		double newMax = 0;
 		int maxIndex = 0;
 		for (int j = 0; j < vectorSize; j++) {
@@ -820,7 +821,7 @@ cv::Point Hand::lookAround(cv::Point start, cv::Mat& skinMask, int maxIterations
 
 
 /*
-* We use a circle mask and get a percentage of how much this was filled by the blob. 
+* We use a circle mask and get a percentage of how much this was filled by the blob.
 * Returns value between 0 .. 1
 */
 double Hand::getCoverage(cv::Point& pos, cv::Mat& blobMap, int radius) {
@@ -828,7 +829,7 @@ double Hand::getCoverage(cv::Point& pos, cv::Mat& blobMap, int radius) {
 	cv::circle(mask, pos, radius, 155, CV_FILLED);
 	cv::Mat result;
 	cv::bitwise_and(blobMap, mask, result);
-	
+
 	double value = cv::sum(result)[0] / (radius*radius*3.1415 * 255.0);
 	return value;
 }

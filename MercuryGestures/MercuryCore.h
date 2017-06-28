@@ -52,7 +52,7 @@ int rgbBound(int color);
  */
 double getAverage(std::vector<double> data);
 
-/* 
+/*
  * Join two strings together.
  */
 std::string joinString(std::string a, std::string b);

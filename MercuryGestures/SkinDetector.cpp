@@ -22,6 +22,7 @@ cv::Scalar SkinDetector::getAverageAreaColor(cv::Rect&area, cv::Mat& frame, bool
 	// refining assumes the first skinmap has been created and we will use it to remove the outliers
 	if (refine) {
 		cv::bitwise_and(this->skinMask, mask, mask);
+		//cv::imshow("bitwise_and Mask", mask);
 	}
 
 	// get the mean color
@@ -36,7 +37,7 @@ cv::Scalar SkinDetector::getAverageAreaColor(cv::Rect&area, cv::Mat& frame, bool
 void SkinDetector::detect(cv::Rect& face, cv::Mat& frame, bool refine, int noiseRemovalThreshold) {
 	// keep track of the previous mask
 	this->skinMask.copyTo(this->previousSkinMask);
-	
+
 	cv::Mat mask;
 	cv::cvtColor(frame, mask, cv::COLOR_BGR2YCrCb);
 
@@ -50,8 +51,9 @@ void SkinDetector::detect(cv::Rect& face, cv::Mat& frame, bool refine, int noise
 	int Cb_MIN = rgbBound(color[2] - 30);  // 77
 	int Cb_MAX = rgbBound(color[2] + 10);  // 127
 
-	//filter the image in YCrCb color space
+	//filter the image in YCrCb color space and put it in this->skinMask
 	cv::inRange(mask, cv::Scalar(Y_MIN, Cr_MIN, Cb_MIN), cv::Scalar(Y_MAX, Cr_MAX, Cb_MAX), this->skinMask);
+	//cv::imshow("skinMask after ranges", this->skinMask);
 }
 
 

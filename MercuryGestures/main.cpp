@@ -5,6 +5,7 @@
 #include "MovementDetector.h"
 #include "SkinDetector.h"
 #include "HandDetector.h"
+#include "SemanticDetector.h"
 
 bool first = true;
 /*
@@ -516,8 +517,8 @@ int headTiltRotate(cv::Rect face, cv::Mat& baseFrame, cv::Mat& drawMat) {
 
 
 int run(cv::VideoCapture& cap, int fps) {
-	// init the classes
 
+	// init the classes
 	SkinDetector  skinDetector;
 	EdgeDetector  edgeDetector;
 	HandDetector  handDetector(fps);
@@ -525,6 +526,10 @@ int run(cv::VideoCapture& cap, int fps) {
 	MovementDetector ROImovementDetector(fps);
 	ActivityGraph activityGraph(fps);
 	FaceDetector  faceDetector;
+
+	SemanticDetector HandsSemanticDetector(fps, "Hands");
+
+
 	if (faceDetector.setup() == false)
 		return -1;
 
@@ -558,10 +563,12 @@ int run(cv::VideoCapture& cap, int fps) {
 
 		// check for end of video file.
 		if (rawFrame.empty()) { break; }
+
+		// get frame width and Height
 		int frameWidth  = rawFrame.cols;
 		int frameHeight = rawFrame.rows;
 
-		// resize image
+		// resize image to frame and get new frame width and Height
 		double resizeFactor = frameHeightMax / double(frameHeight);
 		cv::Size size(std::round(frameWidth * resizeFactor), frameHeightMax);
 		cv::resize(rawFrame, frame, size);
@@ -573,6 +580,7 @@ int run(cv::VideoCapture& cap, int fps) {
 			faceDetector.setVideoProperties(frameWidth, frameHeight);
 			handDetector.setVideoProperties(frameWidth, frameHeight);
 			activityGraph.setVideoProperties(frameWidth, frameHeight);
+			//HeadSemanticDetector.setVideoProperties(frameWidth, frameHeight);
 		}
 
 		// DEBUG
@@ -587,17 +595,26 @@ int run(cv::VideoCapture& cap, int fps) {
 		cv::cvtColor(frame, gray, CV_BGR2GRAY);
 
 		cv::imshow("raw", frame);
+        cv::imshow("gray", gray);
+
+
+
 
 		// start detection of edges, face and skin
 		bool faceDetected = faceDetector.detect(gray);
 		double pixelSizeInCm = faceDetector.pixelSizeInCm;
-		if (faceDetected) {
-			auto face = &(faceDetector.face.rect);
-			skinDetector.detect(*face, frame, initialized, (3.0 / pixelSizeInCm) * 4);
-			edgeDetector.detect(gray);
 
+		if (faceDetected) {
+			auto face = &(faceDetector.face.rect); // get face rect
+			skinDetector.detect(*face, frame, initialized, (3.0 / pixelSizeInCm) * 4); //detect skin color of the face
+			//skinDetector.show();
+			edgeDetector.detect(gray); // detect edges on the gray picture
+			//edgeDetector.show("MyEdgeDetector");
+
+            // initialized assumes the first skinmap has been created
 			if (initialized) {
-                temporalSkinMask = skinDetector.getMergedMap();
+                temporalSkinMask = skinDetector.getMergedMap(); // merge previous skinmap with current one if they have the same num of columns
+
                 roiMask = cv::Mat::zeros(temporalSkinMask.rows, temporalSkinMask.cols, temporalSkinMask.type()); // all 0
 
 				// get an initial motion estimate based on the temporal skin mask alone. This is used
@@ -630,11 +647,13 @@ int run(cv::VideoCapture& cap, int fps) {
 				handDetector.addResultToMask(roiMask);
 				faceDetector.addResultToMask(roiMask);
 				cv::bitwise_and(temporalSkinMask, roiMask, temporalSkinMask);
+				cv::imshow("temporalSkinMask", roiMask);
 
 				// detect movent only within the ROI areas.
 				ROImovementDetector.detect(gray, grayPrev);
 				ROImovementDetector.mask(temporalSkinMask);
 				ROImovementDetector.calculate(faceDetector.normalizationFactor);
+
 
 				// draw the graph (optional);
 				activityGraph.setValue("Skin masked Movement", movementDetector.value);
@@ -668,6 +687,46 @@ int run(cv::VideoCapture& cap, int fps) {
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI:  ------------- //
 				//																   //
 				double publishValue = ROImovementDetector.value;				   //
+				//std::cout << "ROI value: " << publishValue << std::endl;
+
+
+
+
+                double semanticValue = 0.0; //
+
+                cv::Point faceCenterPoint(faceDetector.faceCenterX, faceDetector.faceCenterY); // !! THIS IS NOT CORRECT YET !! It must be a kind of average position
+                double pixelSizeInCmTemp = averageFaceHeight / faceDetector.face.rect.height;
+
+                std::vector<cv::Point> handPositions [2];
+
+                //handPositions[0] = handDetector.leftHand.positionHistory;
+                //handPositions[1] = handDetector.rightHand.positionHistory;
+                //std::vector<std::vector<cv::Point>> handPositions;
+
+                // (THIS NEXT PART IS REALLY NOT OPTIMIZED -  Just for test)
+                std::vector<cv::Point> LHandHistory = handDetector.leftHand.positionHistory;
+                std::vector<cv::Point> RHandHistory = handDetector.rightHand.positionHistory;
+                int LHandPositionIndex = handDetector.leftHand.positionIndex;
+                int RHandPositionIndex = handDetector.rightHand.positionIndex;
+
+                // insert newest data to the end of the vector
+                LHandHistory.insert(LHandHistory.end(),LHandHistory.begin(),LHandHistory.begin() + LHandPositionIndex); // add newest values on top of the deck
+                RHandHistory.insert(RHandHistory.end(),RHandHistory.begin(),RHandHistory.begin() + RHandPositionIndex); // add newest values on top of the deck
+                // remove newest data that was copied to the end of the vector
+                LHandHistory.erase (LHandHistory.begin(),LHandHistory.begin() + LHandPositionIndex);
+                RHandHistory.erase (RHandHistory.begin(),RHandHistory.begin() + RHandPositionIndex);
+
+                // put all organized history on the array ( 0 -> left hand; 1 -> right hand)
+                handPositions[0] = LHandHistory;
+                handPositions[1] = RHandHistory;
+
+                // detect semantic gestures
+                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions);
+
+
+
+
+
                 if (handDetector.leftHand.position.x == 0 || handDetector.leftHand.position.y ==0) {leftHandMissing = true; }
                 if (handDetector.rightHand.position.x == 0 || handDetector.rightHand.position.y ==0) {rightHandMissing = true;}
 
@@ -693,6 +752,11 @@ int run(cv::VideoCapture& cap, int fps) {
 		// copy to buffer so we can do a difference check.
 		gray.copyTo(grayPrev);
 
+
+
+
+
+
 		// DEBUG
 		if (calcSkip > 0) {
 			calcSkip--;
@@ -715,7 +779,7 @@ int run(cv::VideoCapture& cap, int fps) {
         if ((initialized && first) || startOk) {
             cv::moveWindow("white", 2000, 0);
             cv::moveWindow("face", 2000, 340);
-            cv::moveWindow("DebugGUI", 2450, 340);
+            cv::moveWindow("DebugGUI", 0, 340);
             cv::moveWindow("debugMapHands", 2750,0);
             first = false;
         }
@@ -831,8 +895,8 @@ void manage(int movieIndex) {
     else if (value == -1)  // previous movie
         newIndex -= 1;
 
-    else if (value == 97) {
-        cap.open(0);
+    else if (value == 97) { // key = a
+        cap.open(0); // open camera
         fps=24;
         value = run(cap, fps);
         cap.release();

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="gesturesCB" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Option virtualFolders="MercuryGestures/;" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/gesturesCB" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add directory="include" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/gesturesCB" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add directory="include" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="../MercuryGestures/ActivityGraph.cpp" />
+		<Unit filename="../MercuryGestures/ActivityGraph.h" />
+		<Unit filename="../MercuryGestures/CMakeFiles/3.5.1/CompilerIdC/CMakeCCompilerId.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../MercuryGestures/CMakeFiles/3.5.1/CompilerIdCXX/CMakeCXXCompilerId.cpp" />
+		<Unit filename="../MercuryGestures/CMakeFiles/feature_tests.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../MercuryGestures/CMakeFiles/feature_tests.cxx" />
+		<Unit filename="../MercuryGestures/EdgeDetector.cpp" />
+		<Unit filename="../MercuryGestures/EdgeDetector.h" />
+		<Unit filename="../MercuryGestures/FaceDetector.cpp" />
+		<Unit filename="../MercuryGestures/FaceDetector.h" />
+		<Unit filename="../MercuryGestures/Hand.cpp" />
+		<Unit filename="../MercuryGestures/HandDetector.cpp" />
+		<Unit filename="../MercuryGestures/HandDetector.h" />
+		<Unit filename="../MercuryGestures/MercuryCore.h" />
+		<Unit filename="../MercuryGestures/MovementDetector.cpp" />
+		<Unit filename="../MercuryGestures/MovementDetector.h" />
+		<Unit filename="../MercuryGestures/SemanticDetector.cpp" />
+		<Unit filename="../MercuryGestures/SemanticDetector.h" />
+		<Unit filename="../MercuryGestures/SkinDetector.cpp" />
+		<Unit filename="../MercuryGestures/SkinDetector.h" />
+		<Unit filename="../MercuryGestures/main.cpp" />
+		<Unit filename="../MercuryGestures/old.cpp" />
+		<Unit filename="../MercuryGestures/util.cpp" />
+		<Unit filename="../include/SemanticDetector.h">
+			<Option virtualFolder="MercuryGestures/" />
+		</Unit>
+		<Unit filename="../src/SemanticDetector.cpp">
+			<Option virtualFolder="MercuryGestures/" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

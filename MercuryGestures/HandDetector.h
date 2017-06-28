@@ -2,13 +2,13 @@
 #include "MercuryCore.h"
 
 enum SearchMode {
-	FREE_SEARCH, 
-	SEARCH_DOWN, 
-	SEARCH_STRICT_LEFT, 
-	SEARCH_LEFT, 
+	FREE_SEARCH,
+	SEARCH_DOWN,
+	SEARCH_STRICT_LEFT,
+	SEARCH_LEFT,
 	SEARCH_STRICT_RIGHT,
 	SEARCH_RIGHT,
-	SEARCH_UP   
+	SEARCH_UP
 };
 
 enum BlobType {
@@ -69,11 +69,11 @@ public:
 	std::vector<cv::Point> positionHistory;
 	std::vector<BlobInformation> blobHistory;
 
-	int historySize = 50;
+	int historySize = 100;
 
 	Hand();
 	~Hand();
-	
+
 	// set the estimate based on the blobs. This is a fallback and/or initialization position.
 	void setEstimate(cv::Point& estimate, BlobInformation& blob, bool ignoreIntersection = false, Condition condition = NONE);
 	void reset();
@@ -83,7 +83,7 @@ public:
 	bool isIntersecting(cv::Point& otherHandPosition);
 	void handleIntersection(cv::Point& otherHandPosition, cv::Mat& skinMask);
 	void setInvalideState();
-	
+
 	// solve and finalize the positions. The handling of intersections is in between this
 	void solve(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask, std::vector<BlobInformation>& blobs, cv::Mat& movementMap);
 	void finalize(cv::Mat& skinMask, cv::Mat& movementMap);
@@ -105,7 +105,7 @@ private:
 	// prediction
 	cv::Point getPredictedPosition(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask);
 	cv::Point getEstimateByOpticalFlow(cv::Mat& gray, cv::Mat& grayPrev, cv::Mat& skinMask, cv::Point& lastPosition);
-	
+
 	// util
 	int getNextIndex(int index);
 	int getPreviousIndex(int index);
@@ -127,7 +127,7 @@ private:
 		int yOffset,
 		int radius
 	);
-	
+
 
 };
 
@@ -151,7 +151,7 @@ public:
 
 	HandDetector(int fps);
 	~HandDetector();
-	
+
 	void reset();
 	void addResultToMask(cv::Mat& canvas);
     void detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::Mat& skinMask, cv::Mat& movementMap, cv::Mat& edges, double pixelSizeInCm, cv::Mat& faceMat);

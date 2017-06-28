@@ -48,6 +48,7 @@ SET (${this_target}_SOURCE_FILES
 	main.cpp
 	MovementDetector.cpp
 	old.cpp
+	SemanticDetector.cpp
 	SkinDetector.cpp
 	util.cpp
     )
@@ -61,6 +62,7 @@ SET(${this_target}_HEADER_FILES
 	HandDetector.h
 	MercuryCore.h
 	MovementDetector.h
+	SemanticDetector.h
 	SkinDetector.h
     )
 

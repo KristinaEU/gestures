@@ -6,7 +6,7 @@
 MovementDetector::MovementDetector(int fps) {
 	this->fps = fps;
 
-	// set size of the filter 
+	// set size of the filter
 	this->values.resize(fps, 0.0);
 }
 
@@ -32,6 +32,7 @@ void MovementDetector::mask(cv::Mat& mask) {
 
 
 void MovementDetector::calculate(double normalizationFactor) {
+
 	this->value = std::min(this->maxMovement, std::max(0.0, (cv::sum(this->movementMap)[0] / 255.0) * normalizationFactor)) / maxMovement;
 
 	values[this->index%this->fps] = this->value;

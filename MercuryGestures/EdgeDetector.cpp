@@ -13,7 +13,7 @@ void EdgeDetector::detect(cv::Mat frame) {
 	int edgeThresh = 1;
 	int lowThreshold = 20;
 	int const max_lowThreshold = 100;
-	int ratio = 3;
+	int ratio = 2;
 	int kernel_size = 3;
 
 
