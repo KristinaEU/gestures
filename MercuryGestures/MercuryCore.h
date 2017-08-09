@@ -6,7 +6,70 @@
 #include <ctime>
 #include <stdio.h>
 
+#include <dirent.h>
+
+#include <random>
+
 #define DEBUG
+//#define TRAINING
+//#define TRAINING_SAVE_DATA
+//#define TRAINING_CREATE_NEW_CLASSIFIER
+
+// this videos info tells the last frame where the gesture is finalized
+// {"videoName", "lastFrameNumberGesture"}
+static std::map<std::string, int> videosInfo = {
+            {"RHShake00.mp4", 150},
+            {"RHShake01.mp4", 140},
+            {"RHShake02.mp4", 120},
+            {"RHShake03.mp4", 100},
+            {"RHShake04.mp4", 90},
+            {"RHShake05.mp4", 115},
+            {"RHShake06.mp4", 120},
+            {"RHShake07.mp4", 110},
+            {"RHShake08.mp4", 110},
+            {"RHShake09.mp4", 90},
+            {"RHShake10.mp4", 90},
+            {"RHShake11.mp4", 170},
+            {"RHShake12.mp4", 160},
+            {"RHShake13.mp4", 150},
+            {"RHShake14.mp4", 125},
+            {"RHShake15.mp4", 145},
+            {"RHShake16.mp4", 115},
+            {"RHShake17.mp4", 160},
+            {"RHShake18.mp4", 150},
+            {"RHShake19.mp4", 190},
+            {"RHShake20.mp4", 120},
+            {"RHShake21.mp4", 150},
+            {"RHShake22.mp4", 150},
+            {"RHShake23.mp4", 175},
+            {"RHShake24.mp4", 160},
+
+            {"LHShake00.mp4", 175},
+            {"LHShake01.mp4", 150},
+            {"LHShake02.mp4", 160},
+            {"LHShake03.mp4", 165},
+            {"LHShake04.mp4", 145},
+            {"LHShake05.mp4", 135},
+            {"LHShake06.mp4", 175},
+            {"LHShake07.mp4", 160},
+            {"LHShake08.mp4", 160},
+            {"LHShake09.mp4", 165},
+            {"LHShake10.mp4", 150},
+            {"LHShake11.mp4", 150},
+            {"LHShake12.mp4", 170},
+            {"LHShake13.mp4", 130},
+            {"LHShake14.mp4", 165},
+            {"LHShake15.mp4", 120},
+            {"LHShake16.mp4", 130},
+            {"LHShake17.mp4", 120},
+            {"LHShake18.mp4", 120},
+            {"LHShake19.mp4", 125},
+            {"LHShake20.mp4", 135},
+            {"LHShake21.mp4", 135},
+            {"LHShake22.mp4", 145},
+            {"LHShake23.mp4", 140},
+            {"LHShake24.mp4", 130}
+        };
 
 // based on // https://upload.wikimedia.org/wikipedia/commons/6/61/HeadAnthropometry.JPG
 const double averageFaceWidth = 15.705; //cm (95th percentile)

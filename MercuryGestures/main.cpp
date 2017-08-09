@@ -7,7 +7,9 @@
 #include "HandDetector.h"
 #include "SemanticDetector.h"
 
+std::string capVideoName; // current video name. Used for training
 bool first = true;
+
 /*
 * Run the algorithm on this video feed
 */
@@ -529,7 +531,6 @@ int run(cv::VideoCapture& cap, int fps) {
 
 	SemanticDetector HandsSemanticDetector(fps, "Hands");
 
-
 	if (faceDetector.setup() == false)
 		return -1;
 
@@ -597,9 +598,6 @@ int run(cv::VideoCapture& cap, int fps) {
 		cv::imshow("raw", frame);
         cv::imshow("gray", gray);
 
-
-
-
 		// start detection of edges, face and skin
 		bool faceDetected = faceDetector.detect(gray);
 		double pixelSizeInCm = faceDetector.pixelSizeInCm;
@@ -609,7 +607,6 @@ int run(cv::VideoCapture& cap, int fps) {
 			skinDetector.detect(*face, frame, initialized, (3.0 / pixelSizeInCm) * 4); //detect skin color of the face
 			//skinDetector.show();
 			edgeDetector.detect(gray); // detect edges on the gray picture
-			//edgeDetector.show("MyEdgeDetector");
 
             // initialized assumes the first skinmap has been created
 			if (initialized) {
@@ -647,7 +644,7 @@ int run(cv::VideoCapture& cap, int fps) {
 				handDetector.addResultToMask(roiMask);
 				faceDetector.addResultToMask(roiMask);
 				cv::bitwise_and(temporalSkinMask, roiMask, temporalSkinMask);
-				cv::imshow("temporalSkinMask", roiMask);
+				//cv::imshow("temporalSkinMask", roiMask);
 
 				// detect movent only within the ROI areas.
 				ROImovementDetector.detect(gray, grayPrev);
@@ -685,7 +682,7 @@ int run(cv::VideoCapture& cap, int fps) {
                 bool rightHandMissing = false;
 
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI:  ------------- //
-				//																   //
+				//	Arousal														   //
 				double publishValue = ROImovementDetector.value;				   //
 				//std::cout << "ROI value: " << publishValue << std::endl;
 
@@ -694,16 +691,12 @@ int run(cv::VideoCapture& cap, int fps) {
 
                 double semanticValue = 0.0; //
 
-                cv::Point faceCenterPoint(faceDetector.faceCenterX, faceDetector.faceCenterY); // !! THIS IS NOT CORRECT YET !! It must be a kind of average position
+                // Get center point of the face
+                cv::Point faceCenterPoint(faceDetector.faceCenterX, faceDetector.faceCenterY);
                 double pixelSizeInCmTemp = averageFaceHeight / faceDetector.face.rect.height;
 
-                std::vector<cv::Point> handPositions [2];
-
-                //handPositions[0] = handDetector.leftHand.positionHistory;
-                //handPositions[1] = handDetector.rightHand.positionHistory;
-                //std::vector<std::vector<cv::Point>> handPositions;
-
-                // (THIS NEXT PART IS REALLY NOT OPTIMIZED -  Just for test)
+                // --- (THIS NEXT PART IS NOT OPTIMIZED -  Just for test) ---
+                // Get hands history positions and the current index of the deck
                 std::vector<cv::Point> LHandHistory = handDetector.leftHand.positionHistory;
                 std::vector<cv::Point> RHandHistory = handDetector.rightHand.positionHistory;
                 int LHandPositionIndex = handDetector.leftHand.positionIndex;
@@ -717,13 +710,30 @@ int run(cv::VideoCapture& cap, int fps) {
                 RHandHistory.erase (RHandHistory.begin(),RHandHistory.begin() + RHandPositionIndex);
 
                 // put all organized history on the array ( 0 -> left hand; 1 -> right hand)
+                std::vector<cv::Point> handPositions [2];
                 handPositions[0] = LHandHistory;
                 handPositions[1] = RHandHistory;
 
+                // ------------------ TESTS: ------------------
+                /*
+                std::vector<cv::Point> LHTEST, RHTEST;
+                for(int i = 0; i < 150; i++){
+                    LHTEST.push_back(cv::Point(250 + i, 150));
+                    RHTEST.push_back(cv::Point(200 - i, 150));
+                }
+                pixelSizeInCmTemp = 0.1;
+                faceCenterPoint.x = 225;
+                faceCenterPoint.y = 120;
+
+                handPositions[0] = LHTEST;
+                handPositions[1] = RHTEST;
+                */
+                // ---------------- END TESTS -----------------
+
                 // detect semantic gestures
-                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions);
+                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // indexFrame can be removed for normal running
 
-
+                //SemanticDetector.detectHandsGestures(faceCenterPoint, pixelSizeInCmTemp, handPositions);
 
 
 
@@ -751,11 +761,6 @@ int run(cv::VideoCapture& cap, int fps) {
 
 		// copy to buffer so we can do a difference check.
 		gray.copyTo(grayPrev);
-
-
-
-
-
 
 		// DEBUG
 		if (calcSkip > 0) {
@@ -822,7 +827,7 @@ int run(cv::VideoCapture& cap, int fps) {
         }
 
         frameIndex += 1;
-    }
+    } // for end
 
     // the camera will be deinitialized automatically in VideoCapture destructor
     return 1;
@@ -831,6 +836,78 @@ int run(cv::VideoCapture& cap, int fps) {
 void manage(int movieIndex) {
     int value;
     std::vector<std::string> videoList;
+
+#ifdef TRAINING
+
+
+
+    //Right Hand
+    videoList.push_back("RHShake00.mp4");
+    videoList.push_back("RHShake01.mp4");
+    videoList.push_back("RHShake02.mp4");
+    videoList.push_back("RHShake03.mp4");
+    videoList.push_back("RHShake04.mp4");
+    videoList.push_back("RHShake05.mp4");
+    videoList.push_back("RHShake06.mp4");
+    videoList.push_back("RHShake07.mp4");
+    videoList.push_back("RHShake08.mp4");
+    videoList.push_back("RHShake09.mp4");
+    videoList.push_back("RHShake10.mp4");
+
+    videoList.push_back("RHShake11.mp4");
+    videoList.push_back("RHShake12.mp4");
+    videoList.push_back("RHShake13.mp4");
+    videoList.push_back("RHShake14.mp4");
+    videoList.push_back("RHShake15.mp4");
+    videoList.push_back("RHShake16.mp4");
+    videoList.push_back("RHShake17.mp4");
+    videoList.push_back("RHShake18.mp4");
+    videoList.push_back("RHShake19.mp4");
+    videoList.push_back("RHShake20.mp4");
+    videoList.push_back("RHShake21.mp4");
+    videoList.push_back("RHShake22.mp4");
+    videoList.push_back("RHShake23.mp4");
+    videoList.push_back("RHShake24.mp4");
+
+
+    /*
+    //Left Hand
+    videoList.push_back("LHShake00.mp4");
+    videoList.push_back("LHShake01.mp4");
+    videoList.push_back("LHShake02.mp4");
+    videoList.push_back("LHShake03.mp4");
+    videoList.push_back("LHShake04.mp4");
+    videoList.push_back("LHShake05.mp4");
+    videoList.push_back("LHShake06.mp4");
+    videoList.push_back("LHShake07.mp4");
+    videoList.push_back("LHShake08.mp4");
+    videoList.push_back("LHShake09.mp4");
+    videoList.push_back("LHShake10.mp4");
+    videoList.push_back("LHShake11.mp4");
+    videoList.push_back("LHShake12.mp4");
+    videoList.push_back("LHShake13.mp4");
+    videoList.push_back("LHShake14.mp4");
+    videoList.push_back("LHShake15.mp4");
+    videoList.push_back("LHShake16.mp4");
+    videoList.push_back("LHShake17.mp4");
+    videoList.push_back("LHShake18.mp4");
+    videoList.push_back("LHShake19.mp4");
+    videoList.push_back("LHShake20.mp4");
+    videoList.push_back("LHShake21.mp4");
+    videoList.push_back("LHShake22.mp4");
+    videoList.push_back("LHShake23.mp4");
+    videoList.push_back("LHShake24.mp4");
+    */
+
+
+
+
+
+
+
+
+
+#else
     //videoList.push_back("tr086_spk13m.mp4");
     videoList.push_back("de001_spk02f.mp4");
     videoList.push_back("de003_spk01f.mp4");
@@ -854,6 +931,7 @@ void manage(int movieIndex) {
     videoList.push_back("de031_spk03f.mp4");
     videoList.push_back("de033_spk02m.mp4");
     videoList.push_back("de033_spk03f.mp4");
+
     /*
     videoList.push_back("es008_spk02f.mp4");
     videoList.push_back("es008_spk03m.mp4");
@@ -868,10 +946,10 @@ void manage(int movieIndex) {
     videoList.push_back("es026_spk06f.mp4");
     videoList.push_back("es028_spk05f.mp4");
     */
+#endif // defined
 
     int amountOfMovies = videoList.size();
     cv::VideoCapture cap;
-
     cap.open(joinString("./media/", videoList[movieIndex]));
     //cap.open(0);
     // initialize video
@@ -879,6 +957,10 @@ void manage(int movieIndex) {
         std::cout << "Cannot open the video file" << std::endl;
         return;
     }
+
+    //strcpy (capVideoName, &videoList[movieIndex]);
+    capVideoName = videoList[movieIndex];
+    std::cout << "-----> Video file: " << videoList[movieIndex] << std::endl;
 
     // get the fps from the video for the graph time calculation
     int fps = cap.get(CV_CAP_PROP_FPS);
@@ -919,6 +1001,17 @@ void manage(int movieIndex) {
 }
 
 int main(int argc, char *argv[]) {
-    manage(21);
+
+    int numberOfVideos;
+
+#ifdef TRAINING
+    std::cout << "I'm in training mode!" << std::endl;
+    numberOfVideos = 25;
+#else
+    numberOfVideos = 22;
+#endif
+
+
+    manage(numberOfVideos - 1);
 	return 0;
 }

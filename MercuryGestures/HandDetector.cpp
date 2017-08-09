@@ -221,11 +221,10 @@ void HandDetector::detect(cv::Mat& gray, cv::Mat& grayPrev, cv::Rect& face, cv::
     // update the face mask and process it
     this->updateFaceMask(highBlobsMask);
     cv::subtract(this->skinMask, this->faceMask, this->skinMask);
-    cv::imshow("subTest", this->skinMask);
+    //cv::imshow("subTest", this->skinMask);
     // use the updated skin mask to get the edges inside of the blobs
     cv::bitwise_and(edges, this->skinMask, edgeMask);
     cv::bitwise_or(this->skinMask, movementMap, movementSkinMask);
-    cv::imshow("movementTest", movementSkinMask);
 
     // case 1: 1 blob in the lower segment.
     if (lowerBodyBlobs.size() == 1) {
