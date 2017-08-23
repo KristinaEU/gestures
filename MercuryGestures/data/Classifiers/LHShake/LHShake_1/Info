@@ -1,0 +1,68 @@
+
+Trained with:
+___________________
+LH of LHShake -> 1 |
+LH of RHShake -> 0 |
+___________________|
+
+All 50000 files were used!
+
+=============================================
+|  TRAINING_CREATE_NEW_CLASSIFIER defined!  |
+=============================================
+Reading RHShake data...
+DONE
+Reading LHShake data...
+DONE
+Get Features data train and data test ...
+DONE!
+data_train   => rows: 40000, cols: 598
+labels_train => rows: 40000, cols: 1
+data_test    => rows: 10000, cols: 598
+labels_test  => rows: 10000, cols: 1
+learningRate  = 0.1
+/-----------------------------------------/
+iterations    = 100
+training...
+done!
+predicting...done!
+original vs predicted:
+accuracy: 58.27%
+saving the classifier to LHClassifier.xml
+lambda = 0.1
+a1 = [3466.4717]
+a2 = [-3461.0051]
+J1 = [0.69274765]
+J2 = [4.9548948e-05]
+	J = [0.69279718]
+
+
+
+=============================================
+|  TRAINING_CREATE_NEW_CLASSIFIER defined!  |
+=============================================
+Reading RHShake data...
+DONE
+Reading LHShake data...
+DONE
+Get Features data train and data test ...
+DONE!
+data_train   => rows: 40000, cols: 598
+labels_train => rows: 40000, cols: 1
+data_test    => rows: 10000, cols: 598
+labels_test  => rows: 10000, cols: 1
+learningRate  = 0.1
+/-----------------------------------------/
+iterations    = 80000
+training...
+done!
+predicting...done!
+original vs predicted:
+accuracy: 92.35%
+saving the classifier to LHClassifier.xml
+lambda = 0.1
+a1 = [3016.2327]
+a2 = [-1964.019]
+J1 = [0.49802518]
+J2 = [18.638821]
+	J = [19.136847]

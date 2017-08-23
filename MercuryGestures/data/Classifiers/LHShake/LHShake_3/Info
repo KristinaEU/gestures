@@ -1,0 +1,36 @@
+Trained with:
+___________________
+LH of LHShake -> 1 |
+LH of RHShake -> 0 |
+___________________|
+
+All 50000 files were used!
+It was introduzed a absolute velocities on a vector features!
+
+=============================================
+|  TRAINING_CREATE_NEW_CLASSIFIER defined!  |
+=============================================
+Reading RHShake data...
+DONE
+Reading LHShake data...
+DONE
+Get Features data train and data test ...
+DONE!
+data_train   => rows: 40000, cols: 598
+labels_train => rows: 40000, cols: 1
+data_test    => rows: 10000, cols: 598
+labels_test  => rows: 10000, cols: 1
+learningRate  = 0.3
+/-----------------------------------------/
+iterations    = 120000
+training...
+done!
+saving the classifier to LHClassifier.xml
+accuracy: 100%
+lambda = 0.3
+a1 = [1121.5968]
+a2 = [-859.30609]
+J1 = [0.19809029]
+J2 = [591.23932]
+	J = [591.43744]
+

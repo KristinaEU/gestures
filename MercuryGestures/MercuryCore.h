@@ -68,7 +68,13 @@ static std::map<std::string, int> videosInfo = {
             {"LHShake21.mp4", 135},
             {"LHShake22.mp4", 145},
             {"LHShake23.mp4", 140},
-            {"LHShake24.mp4", 130}
+            {"LHShake24.mp4", 130},
+
+            {"StaticHandsUp00.mp4", 400},
+            {"StaticHandsUp01.mp4", 350},
+            {"StaticHandsUp02.mp4", 350},
+            {"StaticHandsUp03.mp4", 350},
+            {"StaticHandsUp04.mp4", 400}
         };
 
 // based on // https://upload.wikimedia.org/wikipedia/commons/6/61/HeadAnthropometry.JPG

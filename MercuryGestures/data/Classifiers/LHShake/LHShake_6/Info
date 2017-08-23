@@ -1,0 +1,40 @@
+Trained with:
+___________________
+LH of LHShake -> 1 |
+LH of RHShake -> 0 |
+___________________|
+
+All 50000 files were used!
+It was introduzed a absolute velocities on a vector features!
+It was introduzed 5000 examples with StaticHandsUp to the data!
+It was introduzed 10000 examples with generated StaticHandsUp to the data!
+
+=============================================
+|  TRAINING_CREATE_NEW_CLASSIFIER defined!  |
+=============================================
+Reading RHShake data...
+DONE
+Reading LHShake data...
+DONE
+Reading StaticHandsUp data...
+DONE
+Get Features data train and data test ...
+DONE!
+data_train   => rows: 52000, cols: 598
+labels_train => rows: 52000, cols: 1
+data_test    => rows: 13000, cols: 598
+labels_test  => rows: 13000, cols: 1
+learningRate  = 0.3
+/-----------------------------------------/
+iterations    = 1500
+training...
+done!
+saving the classifier to LHClassifier.xml
+accuracy: 53.7538%
+lambda = 1
+a1 = [3491.6243]
+a2 = [-5438.8892]
+J1 = [0.68696254]
+J2 = [0.33768028]
+	J = [1.0246428]
+

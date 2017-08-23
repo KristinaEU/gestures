@@ -1,0 +1,30 @@
+# depslib dependency file v1.0
+1496394675 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/ActivityGraph.cpp
+	"MercuryCore.h"
+	"ActivityGraph.h"
+
+1501580519 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/MercuryCore.h
+	"opencv2/opencv.hpp"
+	<iostream>
+	<chrono>
+	<ctime>
+	<stdio.h>
+	<random>
+
+1496394675 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/ActivityGraph.h
+	"MercuryCore.h"
+
+1496405908 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/CMakeFiles/3.5.1/CompilerIdC/CMakeCCompilerId.c
+
+1496405909 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/CMakeFiles/3.5.1/CompilerIdCXX/CMakeCXXCompilerId.cpp
+
+1496405909 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/CMakeFiles/feature_tests.c
+
+1496405909 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/CMakeFiles/feature_tests.cxx
+
+1496394676 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/old.cpp
+	"MercuryCore.h"
+
+1496394676 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/util.cpp
+	"MercuryCore.h"
+

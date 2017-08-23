@@ -18,6 +18,7 @@ public:
     std::string pathMixedData = "data/mixedData/";          // all mixed data it taken from here
     std::string pathLHData = "data/SelectedData/LHShake/createdData/";
     std::string pathRHData = "data/SelectedData/RHShake/createdData/";
+    std::string pathStaticHandsUpData = "data/SelectedData/StaticHandsUp/createdData/";
 
     /*
     std::map<int, std::string> gesturesList = {
@@ -27,10 +28,11 @@ public:
     };*/
 
     std::map<std::string, int> gesturesList = {
-            {"unknow",  0},
-            {"RHShake", 1},
-            {"LHShake", 2},
-            {"clap",    3}
+            {"unknow",          0},
+            {"RHShake",         1},
+            {"LHShake",         2},
+            {"StaticHandsUp",   3},
+            {"Clap",            4}
         };
 
 	SemanticDetector(int fps, std::string bodyPart);
@@ -41,6 +43,8 @@ public:
     void getVelocity(std::vector<double> &vectorPositions, double deltaTime, std::vector<double> &vectorOutputVelocities);
 
     float calculateAccuracyPercent(const cv::Mat &original, const cv::Mat &predicted);
+    void sigmoid(cv::Mat &M, cv::Mat &sigmoidOutput);
+    void costFunction(cv::Mat &X, cv::Mat y, cv::Mat theta, double lambda, double JOutput);
     void logisticsTrain(cv::Mat data_train, cv::Mat data_test, cv::Mat labels_train, cv::Mat labels_test);
     void logisticsPredition(std::string info, cv::Mat HandsInfo[]);
 
@@ -98,4 +102,5 @@ private:
                         std::vector< std::vector<cv::Point> > &RHandPositionsListOutput);
 
 
+    //void getTrainAndTestData();
 };

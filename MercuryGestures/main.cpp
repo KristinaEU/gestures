@@ -731,7 +731,7 @@ int run(cv::VideoCapture& cap, int fps) {
                 // ---------------- END TESTS -----------------
 
                 // detect semantic gestures
-                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // indexFrame can be removed for normal running
+                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // indexFrame can be not used for normal running
 
                 //SemanticDetector.detectHandsGestures(faceCenterPoint, pixelSizeInCmTemp, handPositions);
 
@@ -840,7 +840,7 @@ void manage(int movieIndex) {
 #ifdef TRAINING
 
 
-
+    /*
     //Right Hand
     videoList.push_back("RHShake00.mp4");
     videoList.push_back("RHShake01.mp4");
@@ -868,7 +868,7 @@ void manage(int movieIndex) {
     videoList.push_back("RHShake22.mp4");
     videoList.push_back("RHShake23.mp4");
     videoList.push_back("RHShake24.mp4");
-
+    */
 
     /*
     //Left Hand
@@ -899,8 +899,12 @@ void manage(int movieIndex) {
     videoList.push_back("LHShake24.mp4");
     */
 
-
-
+    //Static Hands
+    videoList.push_back("StaticHandsUp00.mp4");
+    videoList.push_back("StaticHandsUp01.mp4");
+    videoList.push_back("StaticHandsUp02.mp4");
+    videoList.push_back("StaticHandsUp03.mp4");
+    videoList.push_back("StaticHandsUp04.mp4");
 
 
 
@@ -908,6 +912,7 @@ void manage(int movieIndex) {
 
 
 #else
+
     //videoList.push_back("tr086_spk13m.mp4");
     videoList.push_back("de001_spk02f.mp4");
     videoList.push_back("de003_spk01f.mp4");
@@ -946,6 +951,8 @@ void manage(int movieIndex) {
     videoList.push_back("es026_spk06f.mp4");
     videoList.push_back("es028_spk05f.mp4");
     */
+
+
 #endif // defined
 
     int amountOfMovies = videoList.size();
@@ -1006,7 +1013,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef TRAINING
     std::cout << "I'm in training mode!" << std::endl;
-    numberOfVideos = 25;
+    numberOfVideos = 5;
 #else
     numberOfVideos = 22;
 #endif
