@@ -870,7 +870,7 @@ void manage(int movieIndex) {
     videoList.push_back("RHShake24.mp4");
     */
 
-    /*
+
     //Left Hand
     videoList.push_back("LHShake00.mp4");
     videoList.push_back("LHShake01.mp4");
@@ -897,16 +897,16 @@ void manage(int movieIndex) {
     videoList.push_back("LHShake22.mp4");
     videoList.push_back("LHShake23.mp4");
     videoList.push_back("LHShake24.mp4");
-    */
 
+
+    /*
     //Static Hands
     videoList.push_back("StaticHandsUp00.mp4");
     videoList.push_back("StaticHandsUp01.mp4");
     videoList.push_back("StaticHandsUp02.mp4");
     videoList.push_back("StaticHandsUp03.mp4");
     videoList.push_back("StaticHandsUp04.mp4");
-
-
+    */
 
 
 
