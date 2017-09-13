@@ -9,6 +9,11 @@
 #include <dirent.h>
 
 #include <random>
+#include <numeric>
+#include <vector>
+
+#define _USE_MATH_DEFINES // for C++
+#include <cmath>
 
 #define DEBUG
 //#define TRAINING

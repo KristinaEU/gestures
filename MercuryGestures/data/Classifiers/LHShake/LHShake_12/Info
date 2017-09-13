@@ -1,0 +1,73 @@
+All 50000 files were used!
+It was introduzed a absolute velocities on a vector features!
+	It was introduzed 5000 examples with StaticHandsUp to the data!
+	It was introduzed 10000 examples with generated StaticHandsUp to the data!
+It was added the polynomies(degree 6)
+Code rearanged 
+createListOfStaticPositions
+createListOfCircularPositions
+
+=============================================
+|  TRAINING_CREATE_NEW_CLASSIFIER defined!  |
+=============================================
+Reading LHShake data...
+	LHandPositionsList_OfLHShake size = 25000
+DONE
+Reading StaticHandsUp data...
+	LHandPositionsList_OfStaticHandsUp size = 5000
+DONE
+Generating more static hands positions data...
+	staticPositions_Generated size = 40000
+DONE
+Generating circular hands positions data...
+	circularPositionsList_Generated size = 36000
+DONE
+LH_Shake_MatList          => rows: 25000, cols: 2549
+LH_StaticHandsUp_MatList  => rows: 5000, cols: 2549
+data_train   => rows: 84800, cols: 2549
+labels_train => rows: 84800, cols: 1
+data_CV      => rows: 0, cols: 0
+labels_CV    => rows: 0, cols: 0
+data_test    => rows: 21200, cols: 2549
+labels_test  => rows: 21200, cols: 1
+learningRate  = 3000
+/-----------------------------------------/
+iterations    = 5
+setting training parameters...
+training...
+done!
+saving the classifier to LHClassifier.xml
+accuracy: 74.1792%
+lambda = 1
+a1 = [3062.4312]
+a2 = [-9044.6689]
+J1 = [0.57108963]
+J2 = [213.50027]
+	J = [214.07137]
+/-----------------------------------------/
+iterations    = 50
+setting training parameters...
+training...
+done!
+saving the classifier to LHClassifier.xml
+accuracy: 98.9481%
+lambda = 1
+a1 = [2237.4216]
+a2 = [-5045.8486]
+J1 = [0.34355047]
+J2 = [4648.3286]
+	J = [4648.6724]
+/-----------------------------------------/
+iterations    = 100
+setting training parameters...
+training...
+done!
+saving the classifier to LHClassifier.xml
+accuracy: 100%
+lambda = 1
+a1 = [1709.5962]
+a2 = [-3764.759]
+J1 = [0.25822431]
+J2 = [10516.659]
+	J = [10516.917]
+

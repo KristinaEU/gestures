@@ -52,6 +52,11 @@ public:
 
 private:
 
+    //std::vector<int> LHShake_Filter(10,0);
+    std::vector<int> LHShake_Filter{std::vector<int>(10,0)};
+    bool flag_LHShake = false;
+    int rowNum = 0;
+
     template <typename T> void extendVectorRepeting (std::vector<T> &vect, int lenghtVec, std::vector<T> &vectOut);
 
     void splitDataInSets(cv::Mat &setMat,
@@ -131,6 +136,16 @@ private:
 
     void createListOfStaticPositions(int x,
                                      int y,
+                                     unsigned int numOfVectors,
+                                     unsigned int numOfPoints,
+                                     std::vector< std::vector<cv::Point> > &positionsListOutput);
+
+    void createListOfCircularPositions(int c1,
+                                     int c2,
+                                     double a,
+                                     double b,
+                                     double f,
+                                     double fps,
                                      unsigned int numOfVectors,
                                      unsigned int numOfPoints,
                                      std::vector< std::vector<cv::Point> > &positionsListOutput);

@@ -3,12 +3,13 @@
 	"MercuryCore.h"
 	"ActivityGraph.h"
 
-1501580519 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/MercuryCore.h
+1504513164 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/MercuryCore.h
 	"opencv2/opencv.hpp"
 	<iostream>
 	<chrono>
 	<ctime>
 	<stdio.h>
+	<dirent.h>
 	<random>
 
 1496394675 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/ActivityGraph.h
@@ -26,5 +27,41 @@
 	"MercuryCore.h"
 
 1496394676 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/util.cpp
+	"MercuryCore.h"
+
+1497009675 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/EdgeDetector.cpp
+	"EdgeDetector.h"
+
+1496394675 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/EdgeDetector.h
+	"MercuryCore.h"
+
+1498038460 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/FaceDetector.cpp
+	"MercuryCore.h"
+	"FaceDetector.h"
+
+1496394675 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/FaceDetector.h
+	"MercuryCore.h"
+
+1497364399 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/Hand.cpp
+	"MercuryCore.h"
+	"HandDetector.h"
+	<set>
+
+1498056065 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/HandDetector.h
+	"MercuryCore.h"
+
+1497356068 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/MovementDetector.cpp
+	"MercuryCore.h"
+	"MovementDetector.h"
+
+1496394676 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/MovementDetector.h
+	"MercuryCore.h"
+	"FaceDetector.h"
+
+1497347425 source:/home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/SkinDetector.cpp
+	"MercuryCore.h"
+	"SkinDetector.h"
+
+1496394676 /home/luis/Documents/software/KRISTINA/gestures/MercuryGestures/SkinDetector.h
 	"MercuryCore.h"
 

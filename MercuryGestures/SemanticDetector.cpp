@@ -443,6 +443,34 @@ void SemanticDetector::createListOfStaticPositions(int x,
     //std::cout << "positionsListOutput size = " << positionsListOutput.size() << std::endl;
 }
 
+// ( c1 + a*cos(2*pi*f*t) , c2 + b*sin(2*pi*f*t) )
+void SemanticDetector::createListOfCircularPositions(int c1,
+                                                     int c2,
+                                                     double a,
+                                                     double b,
+                                                     double f,
+                                                     double fps,
+                                                     unsigned int numOfVectors,
+                                                     unsigned int numOfPoints,
+                                                     std::vector< std::vector<cv::Point> > &positionsListOutput){
+
+    int x, y;
+    double dt = 1.0 / fps;  // time step
+    for(int i = 0; i < numOfVectors; i++){
+        std::vector<cv::Point> auxVector;
+        double t = 0.0;
+        for(int k = 0; k < numOfPoints; k++){
+            x = c1 + a * std::cos(2.0 * M_PI * f * t);
+            y = c2 + b * std::sin(2.0 * M_PI * f * t);;
+            cv::Point pos(x, y);
+            auxVector.push_back(pos);
+            t = t + dt;
+        }
+        positionsListOutput.push_back(auxVector);
+    }
+    //std::cout << "positionsListOutput size = " << positionsListOutput.size() << std::endl;
+}
+
 void SemanticDetector::getFeaturesVector(cv::Point &faceCenterPoint,
                           double pixelSizeInCmTemp,
                           double minTimeToDetect,
@@ -772,7 +800,7 @@ void SemanticDetector::getClassifiersTrainData(cv::Mat &data_train,
                     gestureLabelList_OfLHShake,
                     LHandPositionsList_OfLHShake,
                     RHandPositionsList_OfLHShake);
-    std::cout << "LHandPositionsList_OfLHShake size = " << LHandPositionsList_OfLHShake.size() << std::endl;
+    std::cout << "\tLHandPositionsList_OfLHShake size = " << LHandPositionsList_OfLHShake.size() << std::endl;
     std::cout << "DONE" << std::endl;
 
     std::cout << "Reading StaticHandsUp data..." << std::endl;
@@ -783,7 +811,7 @@ void SemanticDetector::getClassifiersTrainData(cv::Mat &data_train,
                     gestureLabelList_OfStaticHandsUp,
                     LHandPositionsList_OfStaticHandsUp,
                     RHandPositionsList_OfStaticHandsUp);
-    std::cout << "LHandPositionsList_OfStaticHandsUp size = " << LHandPositionsList_OfStaticHandsUp.size() << std::endl;
+    std::cout << "\tLHandPositionsList_OfStaticHandsUp size = " << LHandPositionsList_OfStaticHandsUp.size() << std::endl;
     std::cout << "DONE" << std::endl;
 
 
@@ -793,9 +821,9 @@ void SemanticDetector::getClassifiersTrainData(cv::Mat &data_train,
 
     unsigned int numOfVectors = 1000;
     unsigned int numOfPoints = LHandPositionsList_OfStaticHandsUp[0].size();
-
-    for(int x = 60; x < 500; x+=60){
-        for(int y = 50; y < 300; y+=50){
+    int XmaxWindow = 500, YmaxWindow = 300;
+    for(int x = 60; x < XmaxWindow; x+=60){
+        for(int y = 50; y < YmaxWindow; y+=50){
             createListOfStaticPositions(x,
                                         y,
                                         numOfVectors,
@@ -803,7 +831,35 @@ void SemanticDetector::getClassifiersTrainData(cv::Mat &data_train,
                                         staticPositions_Generated);
         }
     }
-    std::cout << "staticPositions_Generated size = " << staticPositions_Generated.size() << std::endl;
+    std::cout << "\tstaticPositions_Generated size = " << staticPositions_Generated.size() << std::endl;
+    std::cout << "DONE" << std::endl;
+
+
+    // Generate circular movements (ellipses)
+    // (x, y) = ( c1 + a*cos(2*pi*f*t) , c2 + b*sin(2*pi*f*t) )
+    std::cout << "Generating circular hands positions data..." << std::endl;
+    std::vector< std::vector<cv::Point> >  circularPositionsList_Generated;
+
+    for(int c1 = 150; c1 < (0.75 * XmaxWindow); c1+=62){
+        for(int c2 = 75; c2 < YmaxWindow; c2+=75){
+
+            for(double a = 20.0; a < 30.0; a+=10.0){
+                for(double b = 20.0; b < 30.0; b+=10.0){
+
+                    for(double f = 0.5; f < 2.0; f+=0.5){
+
+                        createListOfCircularPositions( c1, c2, a, b, f, this->fps,
+                                                      numOfVectors,
+                                                      numOfPoints,
+                                                      circularPositionsList_Generated);
+                    }
+
+                }
+            }
+
+        }
+    }
+    std::cout << "\tcircularPositionsList_Generated size = " << circularPositionsList_Generated.size() << std::endl;
     std::cout << "DONE" << std::endl;
 
     //-----------------------------------------------------------
@@ -838,13 +894,9 @@ void SemanticDetector::getClassifiersTrainData(cv::Mat &data_train,
     std::cout  << "LH_StaticHandsUp_MatList  => rows: "  << LH_StaticHandsUp_MatList.rows      << ", cols: " << LH_StaticHandsUp_MatList.cols << std::endl;
 
     // Generated static positions
+
     // HERE I use all info from the real data of StaticHandsUp
     // but I pass the generated static positions
-
-
-    // Extend lists in order to have the same size of staticPositions_Generated
-    // extend face Point list
-
 
     /*
     std::vector<int> response;
@@ -867,6 +919,8 @@ void SemanticDetector::getClassifiersTrainData(cv::Mat &data_train,
     std::cout << "response[size] = " << response[test.size()] << std::endl;
     */
 
+    // Extend lists in order to have the same size of staticPositions_Generated
+    // extend face Point list
     std::vector<cv::Point> extended_faceCenterPointList_OfStaticHandsUp;
     extendVectorRepeting (faceCenterPointList_OfStaticHandsUp,
                           staticPositions_Generated.size(),
@@ -895,19 +949,64 @@ void SemanticDetector::getClassifiersTrainData(cv::Mat &data_train,
                    RH_StaticPosGen_MatList);
     //std::cout  << "LH_StaticPosGen_MatList   => rows: "  << LH_StaticPosGen_MatList.rows      << ", cols: " << LH_StaticPosGen_MatList.cols << std::endl;
 
-
-    //
-    cv::Mat LH_AllStaticPos;
-    cv::vconcat(LH_StaticHandsUp_MatList, LH_StaticPosGen_MatList, LH_AllStaticPos);
+    // concatenation of all static positions( real ones with generated ones)
+    //cv::Mat LH_AllStaticPos;
+    //cv::vconcat(LH_StaticHandsUp_MatList, LH_StaticPosGen_MatList, LH_AllStaticPos);
     //std::cout  << "LH_AllStaticPos   => rows: "  << LH_AllStaticPos.rows      << ", cols: " << LH_AllStaticPos.cols << std::endl;
+
+
+    // Generated Circular Positions
+    std::vector<cv::Point> extended_faceCenterPointList_OfCircularPositions;
+    extendVectorRepeting (faceCenterPointList_OfStaticHandsUp,
+                          circularPositionsList_Generated.size(),
+                          extended_faceCenterPointList_OfCircularPositions);
+
+    std::vector<double> extended_pixelSizeInCmTempList_OfCircularPositions;
+    extendVectorRepeting (pixelSizeInCmTempList_OfStaticHandsUp,
+                          circularPositionsList_Generated.size(),
+                          extended_pixelSizeInCmTempList_OfCircularPositions);
+
+    std::vector<double> extended_fpsList_OfCircularPositions;
+    extendVectorRepeting (fpsList_OfLHShake,
+                          circularPositionsList_Generated.size(),
+                          extended_fpsList_OfCircularPositions);
+
+    cv::Mat LH_CircularPosGen_MatList, RH_CircularPosGen_MatList;
+    getFeaturedData(extended_faceCenterPointList_OfCircularPositions,
+                   extended_pixelSizeInCmTempList_OfCircularPositions,
+                   this->minTimeToDetect,
+                   extended_fpsList_OfCircularPositions,
+                   this->interpolationTimeStep,
+                   circularPositionsList_Generated,
+                   circularPositionsList_Generated,
+
+                   LH_CircularPosGen_MatList,
+                   RH_CircularPosGen_MatList);
+    //std::cout  << "LH_CircularPosGen_MatList   => rows: "  << LH_CircularPosGen_MatList.rows      << ", cols: " << LH_StaticPosGen_MatList.cols << std::endl;
+
+    // concatenation of all static positions( real ones with generated ones)
+    //cv::Mat LH_AllCircularPos;// = LH_CircularPosGen_MatList;
+    //cv::vconcat(LH_AllStaticPos, LH_CircularPosGen_MatList, LH_AllCircularPos);
+    //std::cout  << "LH_AllCircularPos   => rows:
+
+
+    // all concatenations
+    cv::Mat LH_AllStaticPos;
+
+    cv::Mat LH_AllFalsePos;
+    cv::vconcat(LH_StaticHandsUp_MatList, LH_StaticPosGen_MatList, LH_AllFalsePos);
+    cv::vconcat(LH_AllFalsePos, LH_CircularPosGen_MatList, LH_AllFalsePos);
+
+    cv::Mat LH_AllTruePos = LH_Shake_MatList;
 
     //--------------------------------------------------------------------------
     //---------------------- separate data and Label data ----------------------
-    // LH_StaticHandsUp_MatList
     double trainPerc = 0.8, cvPerc = 0.0, testPerc = 0.2;
+
+    // LH_AllFalsePos
     cv::Mat auxTrain1,      auxCV1,         auxTest1,
             auxLabelTrain1, auxLabelCV1,    auxLabelTest1;
-    splitDataInSets(LH_AllStaticPos, trainPerc, cvPerc, testPerc, auxTrain1, auxCV1, auxTest1);
+    splitDataInSets(LH_AllFalsePos, trainPerc, cvPerc, testPerc, auxTrain1, auxCV1, auxTest1);
 
     createDataLabels(auxTrain1, false, auxLabelTrain1);
     createDataLabels(auxCV1,    false, auxLabelCV1);
@@ -916,7 +1015,7 @@ void SemanticDetector::getClassifiersTrainData(cv::Mat &data_train,
     // LH_Shake_MatList
     cv::Mat auxTrain2,      auxCV2,         auxTest2,
             auxLabelTrain2, auxLabelCV2,    auxLabelTest2;
-    splitDataInSets(LH_Shake_MatList, trainPerc, cvPerc, testPerc, auxTrain2, auxCV2, auxTest2);
+    splitDataInSets(LH_AllTruePos, trainPerc, cvPerc, testPerc, auxTrain2, auxCV2, auxTest2);
 
     createDataLabels(auxTrain2, true, auxLabelTrain2);
     createDataLabels(auxCV2,    true, auxLabelCV2);
@@ -932,11 +1031,6 @@ void SemanticDetector::getClassifiersTrainData(cv::Mat &data_train,
     mergeMats(auxLabelTrain1, auxLabelTrain2, labels_train);
     mergeMats(auxLabelCV1,    auxLabelCV2,    labels_CV);
     mergeMats(auxLabelTest1,  auxLabelTest2,  labels_test);
-
-
-
-
-
 
 
     /*
@@ -991,7 +1085,7 @@ void SemanticDetector::logisticsTrain(cv::Mat &data_train, cv::Mat &data_test, c
     //labels_train.convertTo(labels_train, CV_32S, scale );
     //data_train.convertTo(data_train, CV_32F, scale);
 
-    std::vector<int> iterationsArray = {50};
+    std::vector<int> iterationsArray = {10000};
     std::cout << "learningRate  = " << learningRate << std::endl;
     //std::cout << "iterations    = " << iterations << std::endl;
     //std::cout << "miniBatchSize = " << miniBatchSize << std::endl;
@@ -1107,7 +1201,7 @@ void SemanticDetector::detect(cv::Point faceCenterPoint, double pixelSizeInCmTem
     const char saveFilename[] = "LHClassifier.xml";
     //std::cout << "loading a new classifier from " << saveFilename << std::endl;
     cv::Ptr<cv::ml::LogisticRegression> lr2 = cv::ml::StatModel::load<cv::ml::LogisticRegression>(saveFilename);
-    std::cout << "predicting...";
+    //std::cout << "predicting...";
     cv::Mat responses;
     lr2->predict(LHAllInfo, responses);
 
@@ -1118,8 +1212,31 @@ void SemanticDetector::detect(cv::Point faceCenterPoint, double pixelSizeInCmTem
     cv::Mat calc = X_bias * thetas.t();
     cv::Mat h;
     sigmoid(calc, h);
-    //std::cout << "X_bias " << X_bias.rows   << " x " << X_bias.cols << std::endl;
-    std::cout << "response: " << responses << " calc:" << calc << " h = " << h << std::endl;
+    std::cout << "response : " << responses << " h : " << h << std::endl;
+
+    // filter
+    // add responses to the filter
+    //std::cout << "rowNum        : " << rowNum << std::endl;
+    LHShake_Filter[rowNum] = responses.at<int>(0,0);
+    //std::cout << "LHShake_Filter: " << std::endl;
+    //for(int i = 0; i < LHShake_Filter.size(); i++){
+    //    std::cout << LHShake_Filter[i] << std::endl;
+    //}
+
+    // if we have 10 positive consecutive detections than
+    int sum = std::accumulate(LHShake_Filter.begin(), LHShake_Filter.end(), 0);
+    if( sum >= 10 ){
+        flag_LHShake = true;    // turn the flat to true
+    }else{
+        flag_LHShake = false;   // turn the flat to false
+    }
+    std::cout << " \tflag_LHShake = " << flag_LHShake << std::endl;
+
+    // actualize rowNum
+    rowNum++;
+    if( (rowNum % 10) == 0 ){
+        rowNum = 0;
+    }
 
     //std::cout << "LHAllInfo = " << std::endl << " " << LHAllInfo << std::endl << std::endl;
 
@@ -1149,10 +1266,14 @@ void SemanticDetector::detect(cv::Point faceCenterPoint, double pixelSizeInCmTem
  }
 #else // this section will be used to train and create classifiers
     #ifdef TRAINING_SAVE_DATA
-
+        /*
+         *  This part will analyze the videos, take data from of specific timestamps,
+         *  generate more data and save all in files.
+        */
         std::cout << "================================" << std::endl;
         std::cout << "|  TRAINING_SAVE_DATA defined! |" << std::endl;
         std::cout << "================================" << std::endl;
+
 
         std::string fileName, fullPath;
         int gestureLabel;
@@ -1269,6 +1390,7 @@ void SemanticDetector::detect(cv::Point faceCenterPoint, double pixelSizeInCmTem
         //std::cout << "staticPositions_Generated size = " << staticPositions_Generated.size() << std::endl;
         std::cout << "DONE" << std::endl;
         */
+
         // create variables to hold the data sets
         cv::Mat data_train,
                 data_CV,
@@ -1277,6 +1399,7 @@ void SemanticDetector::detect(cv::Point faceCenterPoint, double pixelSizeInCmTem
                 labels_CV,
                 labels_test;
 
+        // get sets of data for training
         getClassifiersTrainData(data_train, data_CV, data_test, labels_train, labels_CV, labels_test);
 
         /*
@@ -1307,7 +1430,6 @@ void SemanticDetector::detect(cv::Point faceCenterPoint, double pixelSizeInCmTem
         }
         //std::cout << "LHandPositionsList_OfStaticHandsUp_Generated_02 size = " << LHandPositionsList_OfStaticHandsUp_Generated_02.size() << std::endl;
         */
-
 
         /*
 
@@ -1523,6 +1645,7 @@ void SemanticDetector::detect(cv::Point faceCenterPoint, double pixelSizeInCmTem
 
         */
 
+        // Convert data to CV_32F in order to pass to the logisticsTrain function
         data_train.convertTo(data_train, CV_32F);
         labels_train.convertTo(labels_train, CV_32F);
 
@@ -1531,8 +1654,6 @@ void SemanticDetector::detect(cv::Point faceCenterPoint, double pixelSizeInCmTem
 
         data_test.convertTo(data_test, CV_32F);
         labels_test.convertTo(labels_test, CV_32F);
-
-
 
         /*
         cv::Mat train = cv::Mat::ones(8, 4, CV_32F);
@@ -1549,7 +1670,6 @@ void SemanticDetector::detect(cv::Point faceCenterPoint, double pixelSizeInCmTem
         std::cout << "labelTest = " << std::endl << " " << labelTest << std::endl << std::endl;
         logisticsTrain(train, test, labelTrain, labelTest);
         */
-
 
         std::cout  << "data_train   => rows: "  << data_train.rows      << ", cols: " << data_train.cols << std::endl;
         std::cout  << "labels_train => rows: "  << labels_train.rows    << ", cols: " << labels_train.cols << std::endl;
