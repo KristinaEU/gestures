@@ -684,18 +684,18 @@ int run(cv::VideoCapture& cap, int fps) {
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI:  ------------- //
 				//	Arousal														   //
 				double publishValue = ROImovementDetector.value;				   //
-				//std::cout << "ROI value: " << publishValue << std::endl;
+				std::cout << "ROI value: \t" << publishValue << std::endl;
+
+                if (handDetector.leftHand.position.x == 0 || handDetector.leftHand.position.y ==0) {leftHandMissing = true; }
+                if (handDetector.rightHand.position.x == 0 || handDetector.rightHand.position.y ==0) {rightHandMissing = true;}
 
 
 
-
-                double semanticValue = 0.0; //
 
                 // Get center point of the face
                 cv::Point faceCenterPoint(faceDetector.faceCenterX, faceDetector.faceCenterY);
                 double pixelSizeInCmTemp = averageFaceHeight / faceDetector.face.rect.height;
 
-                // --- (THIS NEXT PART IS NOT OPTIMIZED -  Just for test) ---
                 // Get hands history positions and the current index of the deck
                 std::vector<cv::Point> LHandHistory = handDetector.leftHand.positionHistory;
                 std::vector<cv::Point> RHandHistory = handDetector.rightHand.positionHistory;
@@ -714,39 +714,26 @@ int run(cv::VideoCapture& cap, int fps) {
                 handPositions[0] = LHandHistory;
                 handPositions[1] = RHandHistory;
 
-                // ------------------ TESTS: ------------------
-                /*
-                std::vector<cv::Point> LHTEST, RHTEST;
-                for(int i = 0; i < 150; i++){
-                    LHTEST.push_back(cv::Point(250 + i, 150));
-                    RHTEST.push_back(cv::Point(200 - i, 150));
-                }
-                pixelSizeInCmTemp = 0.1;
-                faceCenterPoint.x = 225;
-                faceCenterPoint.y = 120;
-
-                handPositions[0] = LHTEST;
-                handPositions[1] = RHTEST;
-                */
-                // ---------------- END TESTS -----------------
-
                 // detect semantic gestures
-                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // indexFrame can be not used for normal running
-
+                double semanticValue;
+                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, semanticValue, frameIndex); // indexFrame can be not used for normal running
+                std::cout << "semanticValue:  " << semanticValue << std::endl;
                 //SemanticDetector.detectHandsGestures(faceCenterPoint, pixelSizeInCmTemp, handPositions);
 
 
 
-                if (handDetector.leftHand.position.x == 0 || handDetector.leftHand.position.y ==0) {leftHandMissing = true; }
-                if (handDetector.rightHand.position.x == 0 || handDetector.rightHand.position.y ==0) {rightHandMissing = true;}
 
+                std::cout << "LABELS \t\t" << codeLH << " " << codeRH << std::endl;
                 // values to grab
                 //      publishValue, leftHandMissing, rightHandMissing, codeLH, codeRH, codeGesture (still empty)
                 //																   //
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI   ------------- //
 
                 //if (leftHandMissing || rightHandMissing) std::cout << publishValue << " " << leftHandMissing << " " << rightHandMissing << std::endl;
-                //if (codeLH>0||codeRH>0) std::cout << "LABELS " << codeLH << " " << codeRH << std::endl;
+                //if (codeLH>0||codeRH>0) std::cout << "LABELS \t" << codeLH << " " << codeRH << std::endl;
+
+
+                // Create message to send to SSI module
 
 			}
 			initialized = true;
@@ -839,7 +826,6 @@ void manage(int movieIndex) {
 
 #ifdef TRAINING
 
-
     /*
     //Right Hand
     videoList.push_back("RHShake00.mp4");
@@ -870,7 +856,6 @@ void manage(int movieIndex) {
     videoList.push_back("RHShake24.mp4");
     */
 
-
     //Left Hand
     videoList.push_back("LHShake00.mp4");
     videoList.push_back("LHShake01.mp4");
@@ -898,7 +883,6 @@ void manage(int movieIndex) {
     videoList.push_back("LHShake23.mp4");
     videoList.push_back("LHShake24.mp4");
 
-
     /*
     //Static Hands
     videoList.push_back("StaticHandsUp00.mp4");
@@ -907,9 +891,6 @@ void manage(int movieIndex) {
     videoList.push_back("StaticHandsUp03.mp4");
     videoList.push_back("StaticHandsUp04.mp4");
     */
-
-
-
 
 #else
 
@@ -952,8 +933,7 @@ void manage(int movieIndex) {
     videoList.push_back("es028_spk05f.mp4");
     */
 
-
-#endif // defined
+#endif // TRAINING
 
     int amountOfMovies = videoList.size();
     cv::VideoCapture cap;
@@ -1012,13 +992,91 @@ int main(int argc, char *argv[]) {
     int numberOfVideos;
 
 #ifdef TRAINING
-    std::cout << "I'm in training mode!" << std::endl;
+    std::cout << "|--- I'm in training mode! ---|" << std::endl;
+
+    int fps = 29; // just for now
+    SemanticDetector HandsSemanticDetector(fps, "Hands");
+
+
+    // TRAINING_SAVE_DATA
+    // HandsSemanticDetector.storeVideoData(pathVideos, pathData, goalPoints);
+
+
+    // TRAINING_CREATE_NEW_CLASSIFIER
+    InfoClassifier infoClas;
+    infoClas.pathPositiveData   = "data/SelectedData/LHShake/createdData/";         // for positive gestures
+    infoClas.pathNegativeData   = "data/SelectedData/StaticHandsUp/createdData/";   // for negative gestures
+    infoClas.pathClassifier     = "LHClassifier.xml";                               // classifier path
+
+    infoClas.XmaxWindow         = 500;
+    infoClas.YmaxWindow         = 300;
+
+    infoClas.generateStaticPositions        = true;
+    infoClas.genStaticPosInfo.numOfVectors      = 1000;
+    infoClas.genStaticPosInfo.x_start = 60;
+    infoClas.genStaticPosInfo.x_step  = 60;
+    infoClas.genStaticPosInfo.x_end   = infoClas.XmaxWindow;
+    infoClas.genStaticPosInfo.y_start = 50;
+    infoClas.genStaticPosInfo.y_step  = 50;
+    infoClas.genStaticPosInfo.y_end   = infoClas.YmaxWindow;
+
+
+    infoClas.generateEllipticalPositions    = true;
+    infoClas.genEllipticalPosInfo.numOfVectors  = 1000;
+    infoClas.genEllipticalPosInfo.c1_start  = 150;
+    infoClas.genEllipticalPosInfo.c1_step   = 62;
+    infoClas.genEllipticalPosInfo.c1_end    = (0.75 * infoClas.XmaxWindow);
+
+    infoClas.genEllipticalPosInfo.c2_start  = 75;
+    infoClas.genEllipticalPosInfo.c2_step   = 75;
+    infoClas.genEllipticalPosInfo.c2_end    = infoClas.YmaxWindow;
+
+    infoClas.genEllipticalPosInfo.a_start   = 20.0;
+    infoClas.genEllipticalPosInfo.a_step    = 10.0;
+    infoClas.genEllipticalPosInfo.a_end     = 30.0;
+
+    infoClas.genEllipticalPosInfo.b_start   = 20.0;
+    infoClas.genEllipticalPosInfo.b_step    = 10.0;
+    infoClas.genEllipticalPosInfo.b_end     = 30.0;
+
+    infoClas.genEllipticalPosInfo.f_start   = 0.5;
+    infoClas.genEllipticalPosInfo.f_step    = 0.5;
+    infoClas.genEllipticalPosInfo.f_end     = 2.0;
+
+    infoClas.trainingSets.trainPerc         = 0.6;
+    infoClas.trainingSets.cvPerc            = 0.2;
+    infoClas.trainingSets.testPerc          = 0.2;
+
+
+    //use_LH = true;
+    //use_RH = false;
+
+
+    infoClas.use_LH_StaticPos_for_negativeData     = true;
+    infoClas.use_LH_EllipticalPos_for_negativeData = true;
+    infoClas.use_RH_StaticPos_for_negativeData     = false;
+    infoClas.use_RH_EllipticalPos_for_negativeData = false;
+
+    infoClas.use_LH_StaticPos_for_positiveData     = false;
+    infoClas.use_LH_EllipticalPos_for_positiveData = false;
+    infoClas.use_RH_StaticPos_for_positiveData     = false;
+    infoClas.use_RH_EllipticalPos_for_positiveData = false;
+
+
+    HandsSemanticDetector.trainClassifier(infoClas);
+
+
+
+    // detect semantic gestures
+    // HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // frameIndex can be not used for normal running
+
     numberOfVideos = 5;
+    //manage(numberOfVideos - 1);
 #else
     numberOfVideos = 22;
+    manage(numberOfVideos - 1);
 #endif
 
 
-    manage(numberOfVideos - 1);
 	return 0;
 }

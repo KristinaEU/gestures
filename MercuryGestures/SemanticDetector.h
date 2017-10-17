@@ -3,6 +3,81 @@
 
 extern std::string capVideoName;    // this is used just for training propose
 
+
+struct GenerateStaticPositionInfo{
+
+    unsigned int numOfVectors; // 1000 number of vectors to generate
+
+    int x_start, // pixel number where static position will start in the x Axis
+        x_step,  // number of pixels to shift in x axis to generate the next static positions
+        x_end,
+        y_start, // pixel number where static position will start in the y position
+        y_step,
+        y_end;  // number of pixels to shift in y axis to generate the next static positions
+};
+
+/*
+ * Used to generate an array of ellipses
+ * (x, y) = ( c1 + a*cos(2*pi*f*t) , c2 + b*sin(2*pi*f*t) )
+*/
+struct GenerateEllipticalPositionInfo{
+
+    unsigned int numOfVectors; // number of vectors to generate
+
+    int c1_start,
+        c1_step,
+        c1_end,
+        c2_start,
+        c2_step,
+        c2_end;
+
+    double a_start,
+           a_step,
+           a_end,
+           b_start,
+           b_step,
+           b_end,
+           f_start,
+           f_step,
+           f_end;
+};
+
+struct TrainingSets {
+    double trainPerc = 0.6, // training set percentage
+           cvPerc    = 0.2, // cross validation set percentage
+           testPerc  = 0.2; // test set percentage
+};
+
+struct InfoClassifier {
+    std::string pathPositiveData;    //= "data/SelectedData/LHShake/createdData/";         // for positive gestures
+    std::string pathNegativeData;    //= "data/SelectedData/StaticHandsUp/createdData/";   // for negative gestures
+    std::string pathClassifier;      //= "LHClassifier.xml";
+
+
+    int XmaxWindow; // number of maximum pixels on the x axis of the image
+    int YmaxWindow; // number of maximum pixels on the y axis of the image
+
+    bool use_LH_StaticPos_for_negativeData     = false;
+    bool use_LH_EllipticalPos_for_negativeData = false;
+    bool use_RH_StaticPos_for_negativeData     = false;
+    bool use_RH_EllipticalPos_for_negativeData = false;
+
+    bool use_LH_StaticPos_for_positiveData     = false;
+    bool use_LH_EllipticalPos_for_positiveData = false;
+    bool use_RH_StaticPos_for_positiveData     = false;
+    bool use_RH_EllipticalPos_for_positiveData = false;
+
+
+
+    bool generateStaticPositions = false; // if false than the other variables will not be used
+    GenerateStaticPositionInfo      genStaticPosInfo;
+
+    bool generateEllipticalPositions = false;
+    GenerateEllipticalPositionInfo  genEllipticalPosInfo;
+
+    TrainingSets trainingSets;
+};
+
 class SemanticDetector {
 public:
     int fps = 25; //default
@@ -20,42 +95,39 @@ public:
     std::string pathRHData              = "data/SelectedData/RHShake/createdData/";
     std::string pathStaticHandsUpData   = "data/SelectedData/StaticHandsUp/createdData/";
 
-    /*
-    std::map<int, std::string> gesturesList = {
-        {0, "unknow"},
-        {1, "RHShake"},
-        {2, "LHShake"}
-    };*/
-
-    std::map<std::string, int> gesturesList = {
-            {"unknow",          0},
-            {"RHShake",         1},
-            {"LHShake",         2},
-            {"StaticHandsUp",   3},
-            {"Clap",            4}
-        };
-
 	SemanticDetector(int fps, std::string bodyPart);
 	~SemanticDetector();
 
-    void detect(cv::Point faceCenterPoint, double pixelSizeInCmTemp, std::vector<cv::Point> positions[], int frameIndex = 0);
+    void detect(cv::Point faceCenterPoint, double pixelSizeInCmTemp, std::vector<cv::Point> positions[], double &gestureOutput, int frameIndex = 0);
 	void setVideoProperties(int frameWidth, int frameHeight);
     void getVelocity(std::vector<double> &vectorPositions, double deltaTime, std::vector<double> &vectorOutputVelocities);
 
     float calculateAccuracyPercent(const cv::Mat &original, const cv::Mat &predicted);
+    float calculatePrecision(const cv::Mat &original, const cv::Mat &predicted);
+    float calculateRecall(const cv::Mat &original, const cv::Mat &predicted);
+    float calculateF1Score(float precision, float recall);
+
     void sigmoid(cv::Mat &M, cv::Mat &sigmoidOutput);
     void costFunction(cv::Mat &X, cv::Mat y, cv::Mat theta, double lambda, double JOutput);
-    void logisticsTrain(cv::Mat &data_train, cv::Mat &data_test, cv::Mat &labels_train, cv::Mat &labels_test);
+    void logisticsTrain(cv::Mat &data_train,
+                        cv::Mat &data_CV,
+                        cv::Mat &data_test,
+                        cv::Mat &labels_train,
+                        cv::Mat &labels_CV,
+                        cv::Mat &labels_test);
     void logisticsPredition(std::string info, cv::Mat HandsInfo[]);
 
+    void trainClassifier(InfoClassifier &infoClas);
 
 
 private:
 
-    //std::vector<int> LHShake_Filter(10,0);
-    std::vector<int> LHShake_Filter{std::vector<int>(10,0)};
-    bool flag_LHShake = false;
-    int rowNum = 0;
+    float trust = 0.5; // classifier threshold
+    int LHFilterLength = 15;
+    std::vector<int> LHShake_Filter{std::vector<int>(LHFilterLength,0)};
+    int rowNum = 0; // position number of the filter to be stored some value
+    bool flag_LHShake = false;  // LH Shake final flag detection
+
 
     template <typename T> void extendVectorRepeting (std::vector<T> &vect, int lenghtVec, std::vector<T> &vectOut);
 
@@ -83,12 +155,13 @@ private:
                                   std::vector<double> &HNormalized,
                                   std::vector<double> &HInterpolated);
 
-    void getClassifiersTrainData(cv::Mat &data_train,
-                                 cv::Mat &data_CV,
-                                 cv::Mat &data_test,
-                                 cv::Mat &labels_train,
-                                 cv::Mat &labels_CV,
-                                 cv::Mat &labels_test);
+    void getClassifiersTrainData(InfoClassifier &infoClas,
+                                 cv::Mat &data_train_output,
+                                 cv::Mat &data_CV_output,
+                                 cv::Mat &data_test_output,
+                                 cv::Mat &labels_train_output,
+                                 cv::Mat &labels_CV_output,
+                                 cv::Mat &labels_test_output);
 
     void getFeaturedData(std::vector<cv::Point>             &faceCenterPointList,
                        std::vector<double>                  &pixelSizeInCmTempList,
@@ -140,7 +213,7 @@ private:
                                      unsigned int numOfPoints,
                                      std::vector< std::vector<cv::Point> > &positionsListOutput);
 
-    void createListOfCircularPositions(int c1,
+    void createListOfEllipticalPositions(int c1,
                                      int c2,
                                      double a,
                                      double b,
@@ -163,5 +236,4 @@ private:
                         std::vector< std::vector<cv::Point> > &RHandPositionsListOutput);
 
 
-    //void getTrainAndTestData();
 };

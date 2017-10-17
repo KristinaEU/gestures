@@ -1,0 +1,67 @@
+All 50000 files were used!
+It was introduzed a absolute velocities on a vector features!
+	It was introduzed 5000 examples with StaticHandsUp to the data!
+	It was introduzed 10000 examples with generated StaticHandsUp to the data!
+It was added the polynomies(degree 6)
+Code rearanged 
+createListOfStaticPositions
+createListOfCircularPositions
+It was added the polynomies for velocities (degree 3)
+
+=============================================
+|  TRAINING_CREATE_NEW_CLASSIFIER defined!  |
+=============================================
+Reading LHShake data...
+	LHandPositionsList_OfLHShake size = 25000
+DONE
+Reading StaticHandsUp data...
+	LHandPositionsList_OfStaticHandsUp size = 5000
+DONE
+Generating more static hands positions data...
+	staticPositions_Generated size = 40000
+DONE
+Generating circular hands positions data...
+	circularPositionsList_Generated size = 36000
+DONE
+LH_Shake_MatList          => rows: 25000, cols: 2997
+LH_StaticHandsUp_MatList  => rows: 5000, cols: 2997
+data_train   => rows: 63600, cols: 2997
+labels_train => rows: 63600, cols: 1
+data_CV      => rows: 21200, cols: 2997
+labels_CV    => rows: 21200, cols: 1
+data_test    => rows: 21200, cols: 2997
+labels_test  => rows: 21200, cols: 1
+learningRate  = 0.03
+/-----------------------------------------/
+iterations    = 72000
+setting training parameters...
+training...
+	elapsed time: 219279s
+done!
+saving the classifier to LHClassifier.xml
+Accuracy: 75.2028%
+Precision: 0.487472
+Recall: 1
+F1Score: 0.655437
+data_train: 
+lambda = 1
+a1 = [10052.884]
+a2 = [-31633.807]
+J1 = [0.65545112]
+J2 = [38.214024]
+	J = [38.869476]
+data_CV: 
+lambda = 1
+a1 = [3350.6724]
+a2 = [-10543.229]
+J1 = [0.65537274]
+J2 = [12.738008]
+	J = [13.39338]
+data_test: 
+lambda = 1
+a1 = [3350.4993]
+a2 = [-10544.121]
+J1 = [0.65540659]
+J2 = [12.738008]
+	J = [13.393414]
+
