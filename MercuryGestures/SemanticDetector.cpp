@@ -1,12 +1,24 @@
 /*
-* Company: Almende BV
+* Copyright 2017 Almende BV
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
 * Author: Luis F.M. Cunha
 */
 
 #pragma once
 #include "MercuryCore.h"
 #include "SemanticDetector.h"
-
 
 /*
 * Tell the hands which one is left and right, give them specific colors for drawing, set the fps.
@@ -81,9 +93,7 @@ void SemanticDetector::scaleAndMeanNormalization(cv::Point &faceCenterPoint,
         y = ((double)tempPoint.y) * pixelSizeInCmTemp / this->normalizationFaceHandDistance;
         xHNormalizedOutput.push_back(x);
         yHNormalizedOutput.push_back(y);
-
     }
-
 }
 
 
@@ -125,17 +135,12 @@ void SemanticDetector::getLinearInterpolation(double minTimeToDetect,
 */
 void SemanticDetector::getVelocity(std::vector<double> &vectorPositions, double deltaTime, std::vector<double> &vectorOutputVelocities){
 
-    //std::cout << "---------------- NEW velocities -------------------------------" << std::endl;
     double velocity;
     for(int i = 0; i < vectorPositions.size() - 1; i++){
         velocity = (vectorPositions[i+1] - vectorPositions[i]) / deltaTime;
-        //std::cout << "i = " << i << " --> vectorPositions[i+1]: " << vectorPositions[i+1] << " - vectorPositions[i]: " << vectorPositions[i] << std::endl;
-        //std::cout << "\tdeltaTime = " << deltaTime << " --> velocity: " << velocity << std::endl;
         vectorOutputVelocities.push_back( std::abs(velocity) );
     }
-    //std::cout << "---------------- END velocities -------------------------------" << std::endl;
 }
-
 
 
 void SemanticDetector::getHandFeaturesVector(cv::Point &faceCenterPoint,
@@ -239,9 +244,7 @@ void SemanticDetector::getDataFromFiles(std::string             directoryPath,
         return;
     }
 
-
     std::vector<int> LHandPositionsX, LHandPositionsY, RHandPositionsX, RHandPositionsY;
-
 
     int faceCenterPointX, faceCenterPointY;
     double pixelSizeInCmTemp;
@@ -295,7 +298,6 @@ void SemanticDetector::getDataFromFiles(std::string             directoryPath,
         gestureLabelListOutput.push_back(gestureLabel);
 
     }
-
 }
 
 
@@ -550,43 +552,6 @@ void SemanticDetector::getFeaturedData(std::vector<cv::Point>               &fac
         RHFeaturesMatListOutput.push_back(RHFeaturesMat);
 
     }
-}
-
-/*
-* Here I would like to have the possibility to load multi classifiers to classify multi gestures!
-* Maybe I should load a file with the name of all classifiers and then call one by one...lets see!
-*
-* Based on:
-* https://github.com/opencv/opencv/blob/master/samples/cpp/logistic_regression.cpp
-*/
-void SemanticDetector::logisticsPredition(std::string info, cv::Mat * HandsInfo){
-
-    cv::Mat LHInfo, RHInfo;
-
-    if( info.compare("L") == 0 ) {
-        // get hand
-        LHInfo = HandsInfo[0];
-
-        // load all classifiers
-        //const char fileName[] = "myClassifier.xml";
-        //cv::Ptr<cv::ml::LogisticRegression> lr2 = cv::ml::StatModel::load<cv::ml::LogisticRegression>(fileName);
-    } else if( info.compare("R") == 0 ) {
-        // get hand
-        RHInfo = HandsInfo[0];
-        // load all classifiers
-
-    } else if( info.compare("LR") == 0 ) {
-        // get hands
-        LHInfo = HandsInfo[0];
-        RHInfo = HandsInfo[1];
-
-        // load all classifiers
-
-    } else {
-        // error
-        return;
-    }
-
 }
 
 
@@ -1333,7 +1298,7 @@ void SemanticDetector::logisticsTrain(cv::Mat &data_train,
 void SemanticDetector::detect(cv::Point faceCenterPoint,
                               double pixelSizeInCmTemp,
                               std::vector<cv::Point> positions[],
-                              double &gestureOutput,
+                              float &gestureOutput,
                               int frameIndex) {
     /*
     // checks null parameters
@@ -1476,49 +1441,6 @@ void SemanticDetector::detect(cv::Point faceCenterPoint,
                                      RHandPositions);
         }
     #endif // TRAINING_SAVE_DATA
-
-    #ifdef TRAINING_CREATE_NEW_CLASSIFIER
-        std::cout << "=============================================" << std::endl;
-        std::cout << "|  TRAINING_CREATE_NEW_CLASSIFIER defined!  |" << std::endl;
-        std::cout << "=============================================" << std::endl;
-
-        //trainClassifier(std::string pathPositiveData,
-        //                std::string pathNegativeData);
-        /*
-        // create variables to hold the data sets
-        cv::Mat data_train,
-                data_CV,
-                data_test,
-                labels_train,
-                labels_CV,
-                labels_test;
-
-        // get sets of data for training
-        getClassifiersTrainData(data_train, data_CV, data_test, labels_train, labels_CV, labels_test);
-
-        // Convert data to CV_32F in order to pass to the logisticsTrain function
-        data_train.convertTo(data_train, CV_32F);
-        labels_train.convertTo(labels_train, CV_32F);
-
-        data_CV.convertTo(data_CV, CV_32F);
-        labels_CV.convertTo(labels_CV, CV_32F);
-
-        data_test.convertTo(data_test, CV_32F);
-        labels_test.convertTo(labels_test, CV_32F);
-
-
-        std::cout  << "data_train   => rows: "  << data_train.rows      << ", cols: " << data_train.cols << std::endl;
-        std::cout  << "labels_train => rows: "  << labels_train.rows    << ", cols: " << labels_train.cols << std::endl;
-        std::cout  << "data_CV      => rows: "  << data_CV.rows         << ", cols: " << data_CV.cols << std::endl;
-        std::cout  << "labels_CV    => rows: "  << labels_CV.rows       << ", cols: " << labels_CV.cols << std::endl;
-        std::cout  << "data_test    => rows: "  << data_test.rows       << ", cols: " << data_test.cols << std::endl;
-        std::cout  << "labels_test  => rows: "  << labels_test.rows     << ", cols: " << labels_test.cols << std::endl;
-
-        // than train
-        logisticsTrain(data_train, data_CV, data_test, labels_train, labels_CV, labels_test);
-        */
-
-    #endif // TRAINING_CREATE_NEW_CLASSIFIER
 
 #endif
 

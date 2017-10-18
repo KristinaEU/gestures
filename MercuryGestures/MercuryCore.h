@@ -87,11 +87,12 @@ const double averageFaceWidth = 15.705; //cm (95th percentile)
 const double averageFaceHeight = 23.95; //cm (95th percentile)
 const double faceWidthToHeightRatio = averageFaceWidth / averageFaceHeight;
 
-struct SSIMensage {
+struct SSIMensages {
     double LHLocation;  // Allowed values -> 0.0; 1.0; 2.0; 3.0; 4.0 ;...; 9.0
     double RHLocation;  // Allowed values -> 0.0; 1.0; 2.0; 3.0; 4.0 ;...; 9.0
     double arousal;
-    double gesture;
+    double gesture;     // 100.0 - no gesture
+                        // 101.0 - Left hand shake
 };
 
 struct FaceData {

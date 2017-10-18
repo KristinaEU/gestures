@@ -1,3 +1,19 @@
+/*
+* Copyright 2017 Almende BV
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #include "MercuryCore.h"
 #include "FaceDetector.h"
 #include "ActivityGraph.h"
@@ -646,7 +662,7 @@ int run(cv::VideoCapture& cap, int fps) {
 				cv::bitwise_and(temporalSkinMask, roiMask, temporalSkinMask);
 				//cv::imshow("temporalSkinMask", roiMask);
 
-				// detect movent only within the ROI areas.
+				// detect movement only within the ROI areas.
 				ROImovementDetector.detect(gray, grayPrev);
 				ROImovementDetector.mask(temporalSkinMask);
 				ROImovementDetector.calculate(faceDetector.normalizationFactor);
@@ -663,7 +679,7 @@ int run(cv::VideoCapture& cap, int fps) {
                 handDetector.show();
 
                 // ADDED for mannequin en handposition labels
-                int codeLH=0, codeRH=0, codeGesture=0;
+                int codeLH=0, codeRH=0;
                 faceMat.copyTo(white);
                 white.setTo(cv::Scalar(255,255,255));
                 cv::Point leftHand = handDetector.leftHand.position;
@@ -684,13 +700,10 @@ int run(cv::VideoCapture& cap, int fps) {
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI:  ------------- //
 				//	Arousal														   //
 				double publishValue = ROImovementDetector.value;				   //
-				std::cout << "ROI value: \t" << publishValue << std::endl;
+
 
                 if (handDetector.leftHand.position.x == 0 || handDetector.leftHand.position.y ==0) {leftHandMissing = true; }
                 if (handDetector.rightHand.position.x == 0 || handDetector.rightHand.position.y ==0) {rightHandMissing = true;}
-
-
-
 
                 // Get center point of the face
                 cv::Point faceCenterPoint(faceDetector.faceCenterX, faceDetector.faceCenterY);
@@ -715,15 +728,14 @@ int run(cv::VideoCapture& cap, int fps) {
                 handPositions[1] = RHandHistory;
 
                 // detect semantic gestures
-                double semanticValue;
-                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, semanticValue, frameIndex); // indexFrame can be not used for normal running
-                std::cout << "semanticValue:  " << semanticValue << std::endl;
-                //SemanticDetector.detectHandsGestures(faceCenterPoint, pixelSizeInCmTemp, handPositions);
+                float codeGesture = 0.0;
+                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, codeGesture, frameIndex); // indexFrame can be not used for normal running
+
+                //std::cout << "ROI value        = " << publishValue << std::endl;
+                //std::cout << "(codeLH, codeRH) = (" << codeLH << ", " << codeRH << ")" << std::endl;
+                //std::cout << "codeGesture      = " << codeGesture << std::endl;
 
 
-
-
-                std::cout << "LABELS \t\t" << codeLH << " " << codeRH << std::endl;
                 // values to grab
                 //      publishValue, leftHandMissing, rightHandMissing, codeLH, codeRH, codeGesture (still empty)
                 //																   //
@@ -732,8 +744,6 @@ int run(cv::VideoCapture& cap, int fps) {
                 //if (leftHandMissing || rightHandMissing) std::cout << publishValue << " " << leftHandMissing << " " << rightHandMissing << std::endl;
                 //if (codeLH>0||codeRH>0) std::cout << "LABELS \t" << codeLH << " " << codeRH << std::endl;
 
-
-                // Create message to send to SSI module
 
 			}
 			initialized = true;
