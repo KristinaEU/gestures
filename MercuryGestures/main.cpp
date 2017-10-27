@@ -545,7 +545,9 @@ int run(cv::VideoCapture& cap, int fps) {
 	ActivityGraph activityGraph(fps);
 	FaceDetector  faceDetector;
 
-	SemanticDetector HandsSemanticDetector(fps, "Hands");
+	SemanticDetector handsSemanticDetector(fps, "Hands");
+	SemanticDetector headSemanticDetector(fps, "Head");
+
 
 	if (faceDetector.setup() == false)
 		return -1;
@@ -701,10 +703,10 @@ int run(cv::VideoCapture& cap, int fps) {
 				//	Arousal														   //
 				double publishValue = ROImovementDetector.value;				   //
 
-
                 if (handDetector.leftHand.position.x == 0 || handDetector.leftHand.position.y ==0) {leftHandMissing = true; }
                 if (handDetector.rightHand.position.x == 0 || handDetector.rightHand.position.y ==0) {rightHandMissing = true;}
 
+                // ------------------- Hands semantic gestures ------------------- //
                 // Get center point of the face
                 cv::Point faceCenterPoint(faceDetector.faceCenterX, faceDetector.faceCenterY);
                 double pixelSizeInCmTemp = averageFaceHeight / faceDetector.face.rect.height;
@@ -727,17 +729,70 @@ int run(cv::VideoCapture& cap, int fps) {
                 handPositions[0] = LHandHistory;
                 handPositions[1] = RHandHistory;
 
-                // detect semantic gestures
-                float codeGesture = 0.0;
-                HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, codeGesture, frameIndex); // indexFrame can be not used for normal running
+
+
+                // -------------------------------------------------------------- //
+
+                // ------------------- head semantic gestures ------------------- //
+                // (Head nod, Head shake)
+
+                // get head position history
+                std::vector<cv::Point> headHistory = faceDetector.positionHistory;
+
+                // Get head position index of the history vector
+                int headPositionIndex = faceDetector.positionIndex;
+
+                // insert newest data to the end of the vector
+                headHistory.insert(headHistory.end(),headHistory.begin(),headHistory.begin() + headPositionIndex); // add newest values on top of the deck
+
+                // remove newest data that was copied to the end of the vector
+                headHistory.erase (headHistory.begin(),headHistory.begin() + headPositionIndex);
+
+                // put all organized history on the array ( 0 -> left hand; 1 -> right hand)
+                std::vector<cv::Point> headPositions [1];
+                headPositions[0] = headHistory;
+
+                // -------------------------------------------------------------- //
+                // predictions
+
+                #ifndef TRAINING
+                    // detect hands semantic gestures
+                    float handsCodeGesture = 0.0;
+                    const char LHClassifier[] = "LHClassifier.xml";
+                    handsSemanticDetector.detect(LHClassifier, faceCenterPoint, pixelSizeInCmTemp, handPositions, handsCodeGesture, frameIndex); // indexFrame can be not used for normal running
+
+                    // detect head semantic gestures
+                    float headCodeGesture = 0.0;
+                    const char headClassifier[] = "headClassifier.xml";
+                    //headSemanticDetector.detect(headClassifier, faceCenterPoint, pixelSizeInCmTemp, headPositions, headCodeGesture, frameIndex);
+                #else
+                    std::cout << "================================" << std::endl;
+                    std::cout << "|  TRAINING defined!           |" << std::endl;
+                    std::cout << "================================" << std::endl;
+                    #ifdef TRAINING_SAVE_DATA
+                        std::cout << "================================" << std::endl;
+                        std::cout << "|  TRAINING_SAVE_DATA defined! |" << std::endl;
+                        std::cout << "================================" << std::endl;
+
+                        std::vector<std::vector<cv::Point>> positions;
+                        positions.push_back(headHistory);
+
+                        // Parameters to add:
+                        // storagePath, gestureLabel
+                        headSemanticDetector.storeVideoData(faceCenterPoint, positions, pixelSizeInCmTemp, frameIndex);
+                    #endif // TRAINING_SAVE_DATA
+                #endif
+                // -------------------------------------------------------------- //
+
 
                 //std::cout << "ROI value        = " << publishValue << std::endl;
                 //std::cout << "(codeLH, codeRH) = (" << codeLH << ", " << codeRH << ")" << std::endl;
-                //std::cout << "codeGesture      = " << codeGesture << std::endl;
+                //std::cout << "handsCodeGesture      = " << handsCodeGesture << std::endl;
+                //std::cout << "headCodeGesture       = " << headCodeGesture << std::endl;
 
 
                 // values to grab
-                //      publishValue, leftHandMissing, rightHandMissing, codeLH, codeRH, codeGesture (still empty)
+                //      publishValue, leftHandMissing, rightHandMissing, codeLH, codeRH, handsCodeGesture, headCodeGesture
                 //																   //
 				// ----------  THIS IS THE VALUE TO PUBLISH TO SSI   ------------- //
 
@@ -865,7 +920,7 @@ void manage(int movieIndex) {
     videoList.push_back("RHShake23.mp4");
     videoList.push_back("RHShake24.mp4");
     */
-
+    /*
     //Left Hand
     videoList.push_back("LHShake00.mp4");
     videoList.push_back("LHShake01.mp4");
@@ -892,7 +947,7 @@ void manage(int movieIndex) {
     videoList.push_back("LHShake22.mp4");
     videoList.push_back("LHShake23.mp4");
     videoList.push_back("LHShake24.mp4");
-
+    */
     /*
     //Static Hands
     videoList.push_back("StaticHandsUp00.mp4");
@@ -902,8 +957,14 @@ void manage(int movieIndex) {
     videoList.push_back("StaticHandsUp04.mp4");
     */
 
-#else
+    int numOfHeadShakeVideos = 50;
+    for(int i = 0; i < numOfHeadShakeVideos; i++){
+        std::string videoName = "headShake" + std::to_string(i) + ".mp4";
+        videoList.push_back(videoName);
+    }
 
+#else
+/*
     //videoList.push_back("tr086_spk13m.mp4");
     videoList.push_back("de001_spk02f.mp4");
     videoList.push_back("de003_spk01f.mp4");
@@ -927,7 +988,7 @@ void manage(int movieIndex) {
     videoList.push_back("de031_spk03f.mp4");
     videoList.push_back("de033_spk02m.mp4");
     videoList.push_back("de033_spk03f.mp4");
-
+*/
     /*
     videoList.push_back("es008_spk02f.mp4");
     videoList.push_back("es008_spk03m.mp4");
@@ -942,6 +1003,12 @@ void manage(int movieIndex) {
     videoList.push_back("es026_spk06f.mp4");
     videoList.push_back("es028_spk05f.mp4");
     */
+
+
+
+
+
+
 
 #endif // TRAINING
 
@@ -1003,13 +1070,14 @@ int main(int argc, char *argv[]) {
 
 #ifdef TRAINING
     std::cout << "|--- I'm in training mode! ---|" << std::endl;
-
+    /*
     int fps = 29; // just for now
-    SemanticDetector HandsSemanticDetector(fps, "Hands");
+    SemanticDetector handsSemanticDetector(fps, "Hands");
+    //SemanticDetector headSemanticDetector(fps, "Head");
 
 
     // TRAINING_SAVE_DATA
-    // HandsSemanticDetector.storeVideoData(pathVideos, pathData, goalPoints);
+    // handsSemanticDetector.storeVideoData(pathVideos, pathData, goalPoints);
 
 
     // TRAINING_CREATE_NEW_CLASSIFIER
@@ -1071,19 +1139,19 @@ int main(int argc, char *argv[]) {
     infoClas.use_LH_EllipticalPos_for_positiveData = false;
     infoClas.use_RH_StaticPos_for_positiveData     = false;
     infoClas.use_RH_EllipticalPos_for_positiveData = false;
+    */
 
-
-    HandsSemanticDetector.trainClassifier(infoClas);
-
+    //handsSemanticDetector.trainClassifier(infoClas);
+    //headSemanticDetector.trainClassifier(infoClas);
 
 
     // detect semantic gestures
-    // HandsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // frameIndex can be not used for normal running
+    // handsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // frameIndex can be not used for normal running
 
-    numberOfVideos = 5;
-    //manage(numberOfVideos - 1);
+    numberOfVideos = 50;
+    manage(numberOfVideos - 1);
 #else
-    numberOfVideos = 22;
+    numberOfVideos = 50;//22;
     manage(numberOfVideos - 1);
 #endif
 

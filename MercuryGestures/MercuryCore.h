@@ -15,9 +15,11 @@
 #define _USE_MATH_DEFINES // for C++
 #include <cmath>
 
+#include <array>
+
 #define DEBUG
-//#define TRAINING
-//#define TRAINING_SAVE_DATA
+#define TRAINING
+#define TRAINING_SAVE_DATA
 //#define TRAINING_CREATE_NEW_CLASSIFIER
 
 // this videos info tells the last frame where the gesture is finalized
@@ -79,7 +81,59 @@ static std::map<std::string, int> videosInfo = {
             {"StaticHandsUp01.mp4", 350},
             {"StaticHandsUp02.mp4", 350},
             {"StaticHandsUp03.mp4", 350},
-            {"StaticHandsUp04.mp4", 400}
+            {"StaticHandsUp04.mp4", 400},
+
+            {"headShake0.mp4", 176},
+            {"headShake1.mp4", 190},
+            {"headShake2.mp4", 200},
+            {"headShake3.mp4", 180},
+            {"headShake4.mp4", 245},
+            {"headShake5.mp4", 205},
+            {"headShake6.mp4", 190},
+            {"headShake7.mp4", 245},
+            {"headShake8.mp4", 195},
+            {"headShake9.mp4", 215},
+            {"headShake10.mp4", 150},
+            {"headShake11.mp4", 165},
+            {"headShake12.mp4", 185},
+            {"headShake13.mp4", 205},
+            {"headShake14.mp4", 245},
+            {"headShake15.mp4", 195},
+            {"headShake16.mp4", 205},
+            {"headShake17.mp4", 210},
+            {"headShake18.mp4", 195},
+            {"headShake19.mp4", 190},
+            {"headShake20.mp4", 190},
+            {"headShake21.mp4", 105},
+            {"headShake22.mp4", 170},
+            {"headShake23.mp4", 170},
+            {"headShake24.mp4", 180},
+            {"headShake25.mp4", 208},
+            {"headShake26.mp4", 190},
+            {"headShake27.mp4", 220},
+            {"headShake28.mp4", 130},
+            {"headShake29.mp4", 205},
+            {"headShake30.mp4", 110},
+            {"headShake31.mp4", 170},
+            {"headShake32.mp4", 130},
+            {"headShake33.mp4", 180},
+            {"headShake34.mp4", 160},
+            {"headShake35.mp4", 140},
+            {"headShake36.mp4", 220},
+            {"headShake37.mp4", 160},
+            {"headShake38.mp4", 165},
+            {"headShake39.mp4", 180},
+            {"headShake40.mp4", 190},
+            {"headShake41.mp4", 205},
+            {"headShake42.mp4", 210},
+            {"headShake43.mp4", 200},
+            {"headShake44.mp4", 150},
+            {"headShake45.mp4", 140},
+            {"headShake46.mp4", 185},
+            {"headShake47.mp4", 175},
+            {"headShake48.mp4", 145},
+            {"headShake49.mp4", 195}
+
         };
 
 // based on // https://upload.wikimedia.org/wikipedia/commons/6/61/HeadAnthropometry.JPG

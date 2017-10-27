@@ -124,6 +124,12 @@ bool FaceDetector::detect(cv::Mat& gray) {
 
 			// update the scale of the face.
 			this->updateScale();
+
+			// update history
+            this->positionIndex = this->getNextIndex(this->positionIndex);
+            cv::Point aux = cv::Point(this->faceCenterX, this->faceCenterY);
+            (this->positionHistory)[this->positionIndex] = aux;
+
 			return true;
 		}
 		return false;
@@ -151,3 +157,14 @@ void FaceDetector::reset() {
 	this->goodReadings = 0;
 	this->badReadings = 0;
 }
+
+// History is a deck. Get the index:
+int FaceDetector::getNextIndex(int index) {
+	return (index + 1) % this->historySize;
+}
+
+// History is a deck. Get the index:
+int FaceDetector::getPreviousIndex(int index) {
+	return (index - 1) < 0 ? index - 1 + this->historySize : index - 1;
+}
+

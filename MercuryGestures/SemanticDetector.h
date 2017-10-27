@@ -108,7 +108,7 @@ public:
 
     std::string pathOriginalData        = "data/originalData/";    // all original data taken directly from the videos is stored here
     std::string pathCreatedData         = "data/createdData/";      // all created data with some deviation based on original data is stored here
-    std::string pathMixedData           = "data/mixedData/";          // all mixed data it taken from here
+    //std::string pathMixedData           = "data/mixedData/";          // all mixed data is taken from here
     std::string pathLHData              = "data/SelectedData/LHShake/createdData/";
     std::string pathRHData              = "data/SelectedData/RHShake/createdData/";
     std::string pathStaticHandsUpData   = "data/SelectedData/StaticHandsUp/createdData/";
@@ -116,7 +116,13 @@ public:
 	SemanticDetector(int fps, std::string bodyPart);
 	~SemanticDetector();
 
-    void detect(cv::Point faceCenterPoint, double pixelSizeInCmTemp, std::vector<cv::Point> positions[], float &gestureOutput, int frameIndex = 0);
+    void detect(const char classifierName[],
+                cv::Point faceCenterPoint,
+                double pixelSizeInCmTemp,
+                std::vector<cv::Point> positions[],
+                float &gestureOutput,
+                int frameIndex = 0);
+
 	void setVideoProperties(int frameWidth, int frameHeight);
     void getVelocity(std::vector<double> &vectorPositions, double deltaTime, std::vector<double> &vectorOutputVelocities);
 
@@ -135,6 +141,11 @@ public:
                         cv::Mat &labels_test);
 
     void trainClassifier(InfoClassifier &infoClas);
+
+    void storeVideoData(cv::Point faceCenterPoint,
+                        std::vector<std::vector<cv::Point>> &positions,
+                        double pixelSizeInCmTemp,
+                        int frameIndex);
 
 private:
 
@@ -189,6 +200,7 @@ private:
                        cv::Mat                              &LHFeaturesMatListOutput,
                        cv::Mat                              &RHFeaturesMatListOutput);
 
+    /*
     void getFeaturesVector(cv::Point &faceCenterPoint,
                           double pixelSizeInCmTemp,
                           double minTimeToDetect,
@@ -198,6 +210,23 @@ private:
                           std::vector<cv::Point> &RHandPositions,
                           std::vector<double> &LHAllConcatOutput,
                           std::vector<double> &RHAllConcatOutput);
+    */
+
+    void getFeaturesVector(cv::Point &faceCenterPoint,
+                          double pixelSizeInCmTemp,
+                          double minTimeToDetect,
+                          double fps,
+                          double interpolationTimeStep,
+                          std::vector<std::vector<cv::Point>> &positions,
+                          std::vector<std::vector<double>>    &allConcatOutput);
+
+    void getHeadFeaturesVector(cv::Point &faceCenterPoint,
+                              double pixelSizeInCmTemp,
+                              double minTimeToDetect,
+                              double fps,
+                              double interpolationTimeStep,
+                              std::vector<cv::Point> &headPositions,
+                              std::vector<double> &featuresOutput);
 
     void getHandFeaturesVector(cv::Point &faceCenterPoint,
                               double pixelSizeInCmTemp,
@@ -212,8 +241,9 @@ private:
                         int gestureLabel,
                         double pixelSizeInCmTemp,
                         cv::Point faceCenterPoint,
-                        std::vector<cv::Point> LHandPositions,
-                        std::vector<cv::Point> RHandPositions);
+                        std::vector<std::vector<cv::Point>> positions);
+//                        std::vector<cv::Point> LHandPositions,
+//                        std::vector<cv::Point> RHandPositions);
 
     void generateDataFromOriginal(std::string dataPath,
                                   std::string capVideoName,

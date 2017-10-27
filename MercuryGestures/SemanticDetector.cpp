@@ -37,7 +37,7 @@ void SemanticDetector::setVideoProperties(int frameWidth, int frameHeight) {
 }
 
 /*
-* took from:
+* Took from:
 * http://www.cplusplus.com/forum/general/216928/
 *
 * Returns interpolated value at x from parallel arrays ( xData, yData )
@@ -78,21 +78,35 @@ double SemanticDetector::_interpolate( std::vector<double> &xData,
 */
 void SemanticDetector::scaleAndMeanNormalization(cv::Point &faceCenterPoint,
                                 double pixelSizeInCmTemp,
-                                std::vector<cv::Point> &HandPositions,
-                                std::vector<double> &xHNormalizedOutput,
-                                std::vector<double> &yHNormalizedOutput){
+                                std::vector<cv::Point> &positions,
+                                std::vector<double> &xNormalizedOutput,
+                                std::vector<double> &yNormalizedOutput){
+
+    cv::Point centerPoint;
+    if(this->bodyPart == "Head") {
+        cv::Point zero(0, 0);
+        cv::Point sum  = std::accumulate(positions.begin(), positions.end(), zero);
+        cv::Point centerPoint(sum.x / positions.size(), sum.y / positions.size());
+    }
+    else if(this->bodyPart == "Hands") {
+        cv::Point centerPoint = faceCenterPoint;
+    }
+    else {
+        std::cout << "ERROR!! SemanticDetector::scaleAndMeanNormalization() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+        return;
+    }
 
     double x, y;
     cv::Point tempPoint;
-    for(int i = 0 ; i < HandPositions.size(); i++){
+    for(int i = 0 ; i < positions.size(); i++){
 
         // calculate the distance from hand to face
-        tempPoint = HandPositions[i] - faceCenterPoint;
+        tempPoint = positions[i] - centerPoint;
         //Normalize x and y components
         x = ((double)tempPoint.x) * pixelSizeInCmTemp / this->normalizationFaceHandDistance;
         y = ((double)tempPoint.y) * pixelSizeInCmTemp / this->normalizationFaceHandDistance;
-        xHNormalizedOutput.push_back(x);
-        yHNormalizedOutput.push_back(y);
+        xNormalizedOutput.push_back(x);
+        yNormalizedOutput.push_back(y);
     }
 }
 
@@ -127,7 +141,7 @@ void SemanticDetector::getLinearInterpolation(double minTimeToDetect,
         HInterpolated.push_back( _interpolate( fpsTime, HNormalized, val, true ) );
         //std::cout << "interpolated value in val = " << HInterpolated.at(HInterpolated.size()-1) << std::endl;
     }
-
+    //std::cout << "HInterpolated size = " << HInterpolated.size() << std::endl;
 }
 
 /*
@@ -142,6 +156,70 @@ void SemanticDetector::getVelocity(std::vector<double> &vectorPositions, double 
     }
 }
 
+void SemanticDetector::getHeadFeaturesVector(cv::Point &faceCenterPoint,
+                                              double pixelSizeInCmTemp,
+                                              double minTimeToDetect,
+                                              double fps,
+                                              double interpolationTimeStep,
+                                              std::vector<cv::Point> &headPositions,
+                                              std::vector<double> &featuresOutput){
+    double periodFPS = 1.0 / fps;
+
+    // Feature scaling and Mean normalization
+    std::vector<double> xHeadNormalized, yHeadNormalized;
+    scaleAndMeanNormalization(faceCenterPoint, pixelSizeInCmTemp, headPositions, xHeadNormalized, yHeadNormalized);
+
+    // --- Linear Interpolation ---
+    std::vector<double> xHeadInterpolated, yHeadInterpolated;
+    getLinearInterpolation(minTimeToDetect, periodFPS, interpolationTimeStep, xHeadNormalized, xHeadInterpolated);
+    getLinearInterpolation(minTimeToDetect, periodFPS, interpolationTimeStep, yHeadNormalized, yHeadInterpolated);
+
+    // Add position Polynomials as features
+    /*
+        degree = 6;
+        out = ones(size(X1(:,1)));
+        for i = 1:degree
+            for j = 0:i
+                out(:, end+1) = (X1.^(i-j)).*(X2.^j);
+            end
+        end
+    */
+    /*
+    std::vector<double> polFeatures;
+    polFeatures.push_back(1.0); // bias
+    double polVal;
+    int degree = 6;
+
+    for(int i = 0; i < xHInterpolated.size(); i++) {
+        double valX= xHInterpolated[i], valY = yHInterpolated[i];
+        for(int j = 1; j < degree; j++){
+            for(int k = 0; k < j; k++){
+                polVal = std::pow(valX, j - k) * std::pow(valY,k);
+                polFeatures.push_back(polVal);
+            }
+        }
+    }
+    //std::cout << "polFeatures => " << polFeatures.size() << std::endl;
+    */
+
+    // get velocities
+    std::vector<double> xHInterpolatedVelocity, yHInterpolatedVelocity;
+    getVelocity(xHeadInterpolated, periodFPS, xHInterpolatedVelocity);
+    getVelocity(yHeadInterpolated, periodFPS, yHInterpolatedVelocity);
+
+    // ---------------------------------------------|
+    // At this point we should have all features    |
+    // ---------------------------------------------|
+
+    // Concatenate
+    // First velocities x, than velocities y, than position Polynomials
+    featuresOutput.insert( featuresOutput.end(), xHInterpolatedVelocity.begin(), xHInterpolatedVelocity.end() );
+    featuresOutput.insert( featuresOutput.end(), yHInterpolatedVelocity.begin(), yHInterpolatedVelocity.end() );
+    //featuresOutput.insert( featuresOutput.end(), polFeatures.begin(), polFeatures.end() );
+    //featuresOutput.insert( featuresOutput.end(), polVelocitiesFeatures.begin(), polVelocitiesFeatures.end() );
+    //std::cout << "featuresOutput => " << featuresOutput.size() << std::endl;
+
+}
 
 void SemanticDetector::getHandFeaturesVector(cv::Point &faceCenterPoint,
                                               double pixelSizeInCmTemp,
@@ -309,9 +387,12 @@ void SemanticDetector::saveDataInFile(std::string fullPath,
                                          int gestureLabel,
                                          double pixelSizeInCmTemp,
                                          cv::Point faceCenterPoint,
-                                         std::vector<cv::Point> LHandPositions,
-                                         std::vector<cv::Point> RHandPositions){
+                                         std::vector<std::vector<cv::Point>> positions){
+                                         //std::vector<cv::Point> LHandPositions,
+                                         //std::vector<cv::Point> RHandPositions){
+
     // We should make some checks like if fullPath exists or null parameters !!!!
+
 
     //create a file
     cv::FileStorage file(fullPath, cv::FileStorage::WRITE);
@@ -323,30 +404,115 @@ void SemanticDetector::saveDataInFile(std::string fullPath,
     file << "faceCenterPointX" << faceCenterPoint.x;
     file << "faceCenterPointY" << faceCenterPoint.y;
 
-    // LH
-    // get x and y position for Left hand
-    std::vector<int> containerX, containerY;
-    for( int i = 0; i < LHandPositions.size(); i++){
-        containerX.push_back(LHandPositions[i].x);
-        containerY.push_back(LHandPositions[i].y);
+    if(this->bodyPart == "Head"){
+
+        std::vector<cv::Point> headPositions = positions[0];
+
+        // head - get x and y position
+        std::vector<int> containerX, containerY;
+        for( int i = 0; i < headPositions.size(); i++){
+            containerX.push_back(headPositions[i].x);
+            containerY.push_back(headPositions[i].y);
+        }
+        file << "headPositionsX" << containerX;
+        file << "headPositionsY" << containerY;
+
+        containerX.clear();
+        containerY.clear();
+
     }
-    file << "LHandPositionsX" << containerX;
-    file << "LHandPositionsY" << containerY;
+    else if(this->bodyPart == "Hands"){
 
-    containerX.clear();
-    containerY.clear();
-    // RH
-    for( int i = 0; i < RHandPositions.size(); i++){
-        containerX.push_back(RHandPositions[i].x);
-        containerY.push_back(RHandPositions[i].y);
+        std::vector<cv::Point> LHandPositions = positions[0];
+        std::vector<cv::Point> RHandPositions = positions[1];
+
+        // LH
+        // get x and y position for Left hand
+        std::vector<int> containerX, containerY;
+        for( int i = 0; i < LHandPositions.size(); i++){
+            containerX.push_back(LHandPositions[i].x);
+            containerY.push_back(LHandPositions[i].y);
+        }
+        file << "LHandPositionsX" << containerX;
+        file << "LHandPositionsY" << containerY;
+
+        containerX.clear();
+        containerY.clear();
+
+        // RH
+        // get x and y position for Right hand
+        for( int i = 0; i < RHandPositions.size(); i++){
+            containerX.push_back(RHandPositions[i].x);
+            containerY.push_back(RHandPositions[i].y);
+        }
+        file << "RHandPositionsX" << containerX;
+        file << "RHandPositionsY" << containerY;
+
+        file.release();
+
+        containerX.clear();
+        containerY.clear();
     }
-    file << "RHandPositionsX" << containerX;
-    file << "RHandPositionsY" << containerY;
+    else{
+        std::cout << "ERROR!! SemanticDetector::saveDataInFile() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+        return;
+    }
+}
 
-    file.release();
+void SemanticDetector::storeVideoData(cv::Point faceCenterPoint,
+                                      std::vector<std::vector<cv::Point>> &positions,
+                                      double pixelSizeInCmTemp,
+                                      int frameIndex){
+    /*
+     *  This part will analyze the videos, take data from specific timestamps,
+     *  generate more data and save all in files.
+    */
 
-    containerX.clear();
-    containerY.clear();
+    // If frame is the last one of the gesture
+    if(frameIndex == videosInfo.find(capVideoName)->second){
+        std::cout << "Taking data from " << capVideoName << " at frame " << frameIndex << std::endl;
+
+        std::string fileName, fullPath;
+        int gestureLabel;
+
+        // save history into a file
+        fileName = capVideoName;
+        fullPath = pathOriginalData + fileName + ".yml";
+        gestureLabel = 5;   // (REALLY BAD IMPLEMENTATION FOR NOW!!)
+                            //    1 - "RHShake"
+                            //    2 - "LHShake"
+                            //    3 - "StaticHandsUp"
+                            //    4 - "Head nod"
+                            //    5 - "Head shake"
+        saveDataInFile(fullPath,
+                       capVideoName,
+                       gestureLabel,
+                       pixelSizeInCmTemp,
+                       faceCenterPoint,
+                       positions);
+
+        if(this->bodyPart == "head"){
+            // are we gonna generate any extra data?
+        }
+        else if(this->bodyPart == "hands"){
+
+            // (!!We need to change generateDataFromOriginal() in order to get the positions vector!!)
+            std::vector<cv::Point> LHandPositions = positions[0];
+            std::vector<cv::Point> RHandPositions = positions[1];
+
+            // generate data with some deviations of the original one
+            generateDataFromOriginal(pathCreatedData,
+                                     capVideoName,
+                                     gestureLabel,
+                                     pixelSizeInCmTemp,
+                                     faceCenterPoint,
+                                     LHandPositions,
+                                     RHandPositions);
+        }
+        else{
+            // Nothing yet
+        }
+    }
 }
 
 /*
@@ -397,6 +563,9 @@ void SemanticDetector::generateDataFromOriginal(std::string dataPath,
         fileName = capVideoName + "Generated" + std::to_string(i);
         fullPath = dataPath + fileName + ".yml";
 
+        std::vector<std::vector<cv::Point>> containers;
+        containers.push_back(containerLH);
+        containers.push_back(containerRH);
         // save data into a file
         //(Probably would be better to serialize all data in a single file! Later!)
         saveDataInFile(fullPath,
@@ -404,8 +573,7 @@ void SemanticDetector::generateDataFromOriginal(std::string dataPath,
                gestureLabel,
                pixelSizeInCmTemp,
                faceCenterPoint,
-               containerLH,
-               containerRH);
+               containers);
     }
 }
 
@@ -465,34 +633,70 @@ void SemanticDetector::createListOfEllipticalPositions(int c1,
     //std::cout << "positionsListOutput size = " << positionsListOutput.size() << std::endl;
 }
 
+/*
+positions       ->  Holds head positions history received in a single vector or
+                    Holds hands positions history received in two different vector:
+                        First vector:   Left hand history
+                        Second vector:  Right hand history
+allConcatOutput ->  Returns all concatenated features(e.g. normalized positions, velocities,...) of
+                    the head or hands passed in "positions".
+                        First vector:   Left hand features
+                        Second vector:  Right hand features
+ */
 void SemanticDetector::getFeaturesVector(cv::Point &faceCenterPoint,
                           double pixelSizeInCmTemp,
                           double minTimeToDetect,
                           double fps,
                           double interpolationTimeStep,
-                          std::vector<cv::Point> &LHandPositions,
-                          std::vector<cv::Point> &RHandPositions,
-                          std::vector<double> &LHAllConcatOutput,
-                          std::vector<double> &RHAllConcatOutput){
+                          std::vector<std::vector<cv::Point>> &positions,
+                          std::vector<std::vector<double>>    &allConcatOutput){
 
 
-    std::vector<double> auxLH, auxRH;
+    if(this->bodyPart == "Head"){
 
-    getHandFeaturesVector(faceCenterPoint,
-                          pixelSizeInCmTemp,
-                          minTimeToDetect,
-                          fps,
-                          interpolationTimeStep,
-                          LHandPositions,
-                          LHAllConcatOutput);
+        std::vector<double> headAllConcatOutput;
+        getHeadFeaturesVector(faceCenterPoint,
+                              pixelSizeInCmTemp,
+                              minTimeToDetect,
+                              fps,
+                              interpolationTimeStep,
+                              positions[0],
+                              headAllConcatOutput);
 
-    getHandFeaturesVector(faceCenterPoint,
-                          pixelSizeInCmTemp,
-                          minTimeToDetect,
-                          fps,
-                          interpolationTimeStep,
-                          RHandPositions,
-                          RHAllConcatOutput);
+        //cv::Mat aux(headAllConcatOutput, true);
+        //std::cout << "headAllConcatOutput = " << aux << std::endl;
+        // return features
+        allConcatOutput.push_back(headAllConcatOutput);
+
+    }
+    else if(this->bodyPart == "Hands") {
+
+        std::vector<double> LHAllConcatOutput, RHAllConcatOutput;
+        getHandFeaturesVector(faceCenterPoint,
+                              pixelSizeInCmTemp,
+                              minTimeToDetect,
+                              fps,
+                              interpolationTimeStep,
+                              positions[0],
+                              LHAllConcatOutput);
+
+        getHandFeaturesVector(faceCenterPoint,
+                              pixelSizeInCmTemp,
+                              minTimeToDetect,
+                              fps,
+                              interpolationTimeStep,
+                              positions[1],
+                              RHAllConcatOutput);
+
+        // return features
+        allConcatOutput.push_back(LHAllConcatOutput);
+        allConcatOutput.push_back(RHAllConcatOutput);
+    }
+    else {
+        std::cout << "ERROR!! SemanticDetector::Detect() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+        return;
+    }
+
 }
 
 
@@ -526,7 +730,15 @@ void SemanticDetector::getFeaturedData(std::vector<cv::Point>               &fac
     int numOfData = faceCenterPointList.size();
     for( int i = 0; i < numOfData; i++){
 
-        std::vector<double> LHFeatures, RHFeatures;
+        //std::vector<double> LHFeatures, RHFeatures;
+
+        // Initialize vectors
+        std::vector<double> LHAllConcat, RHAllConcat;
+        std::vector<std::vector<cv::Point>> positionsToDetect;
+        positionsToDetect.push_back(LHandPositionsList[i]); // left hand always first
+        positionsToDetect.push_back(RHandPositionsList[i]); // right hand always second
+
+        std::vector<std::vector<double>> allConcat;
 
         // get single features
         getFeaturesVector(faceCenterPointList[i],
@@ -534,14 +746,18 @@ void SemanticDetector::getFeaturedData(std::vector<cv::Point>               &fac
                       minTimeToDetect,
                       fpsList[i],
                       interpolationTimeStep,
+                      positionsToDetect,
+                      allConcat);
+                      /*
                       LHandPositionsList[i],
                       RHandPositionsList[i],
                       LHFeatures,
                       RHFeatures);
+                      */
 
         // transform in Mat variables
-        cv::Mat LHFeaturesMat(LHFeatures,true);
-        cv::Mat RHFeaturesMat(RHFeatures,true);
+        cv::Mat LHFeaturesMat(allConcat[0],true);
+        cv::Mat RHFeaturesMat(allConcat[1],true);
 
         // transpose - convert vector into a single row (1xm)
         LHFeaturesMat = LHFeaturesMat.t();
@@ -1281,21 +1497,20 @@ void SemanticDetector::logisticsTrain(cv::Mat &data_train,
         costFunction(data_CV,       labels_CV,      thetas, regularization, JOutput);
         std::cout << "data_test: " << std::endl;
         costFunction(data_test,     labels_test,    thetas, regularization, JOutput);
-
-
-
     }
 }
 
 
 /*
-* faceCenterPoint       ->  Position of the face
+* classifierName        ->  Classifier name to use to detect semantic gesture (Later: Change it to path/name)
+* faceCenterPoint       ->  Current Position of the face
 * pixelSizeInCmTemp     ->
 * positions             ->  This is a array of vectors. Those vectors contain the history positions of the tracked body part.
 *                           The positions must have separated within the some interval of time.
 *                           The newest data is located at the end of the vector.
 */
-void SemanticDetector::detect(cv::Point faceCenterPoint,
+void SemanticDetector::detect(const char classifierName[],
+                              cv::Point faceCenterPoint,
                               double pixelSizeInCmTemp,
                               std::vector<cv::Point> positions[],
                               float &gestureOutput,
@@ -1308,65 +1523,130 @@ void SemanticDetector::detect(cv::Point faceCenterPoint,
     }
     */
 
-    double periodFPS = 1.0 / ((double)this->fps); // period of FPS = 1/fps
-    //Take left and right hand positions
-    std::vector<cv::Point> LHandPositions = positions[0];
-    std::vector<cv::Point> RHandPositions = positions[1];
-    cv::Point tempPoint;
+    //std::cout << " --- SemanticDetector::Detect() -> bodyPart: " << this->bodyPart << " ---" << std::endl;
 
-    // check if we have a minimum time for being analyzed (It depends on the fps and history size of the class)
-    double LHandPositionsDuraction = ((double)LHandPositions.size()) * periodFPS;
-    double RHandPositionsDuraction = ((double)RHandPositions.size()) * periodFPS;
-    if( (LHandPositionsDuraction < (this->minTimeToDetect)) || (RHandPositionsDuraction < (this->minTimeToDetect))){
-        std::cout << "SemanticDetector::detect -> No minimum time to analyze gestures! Minimum time:" << ( this->minTimeToDetect) << std::endl;
-        std::cout << "\tMinimum time:" << ( this->minTimeToDetect)
-        << " || Given time (Left hand): " << LHandPositionsDuraction
-        << " || Given time (right hand): " << RHandPositionsDuraction << std::endl;
+    cv::Mat allInfo;
+    double periodFPS = 1.0 / ((double)this->fps); // period of FPS = 1/fps
+
+    if(this->bodyPart == "Head"){
+
+        //Take left and right hand positions
+        std::vector<cv::Point> headPositions = positions[0];
+
+        // check if we have a minimum time for being analyzed (It depends on the fps and history size of the class)
+        double headPositionsDuraction = ((double)headPositions.size()) * periodFPS;
+        if( headPositionsDuraction < (this->minTimeToDetect) ){
+            std::cout << "SemanticDetector::detect -> No minimum time to analyze gestures! Minimum time:" << ( this->minTimeToDetect) << std::endl;
+            std::cout << "\tMinimum time:" << ( this->minTimeToDetect)
+            << " || Given time (right hand): " << headPositionsDuraction << std::endl;
+            return;
+        }
+
+        // Take only the newest samples within the minTimeToDetect
+        int index = (int) std::ceil( this->minTimeToDetect / periodFPS ); // get the number of newest samples that we want to keep
+        headPositions.erase(headPositions.begin(), headPositions.end() - index - 1); // erase oldest samples
+
+        // Initialize vectors
+        std::vector<std::vector<cv::Point>> positionsToDetect;
+        positionsToDetect.push_back(headPositions);
+
+        std::vector<std::vector<double>> allConcat;
+
+        // get features
+        getFeaturesVector(faceCenterPoint,
+                          pixelSizeInCmTemp,
+                          this->minTimeToDetect,
+                          (double)this->fps,
+                          this->interpolationTimeStep,
+                          positionsToDetect,
+                          allConcat);
+
+        // convert data to cv::Mat
+        cv::Mat headAllConcat(allConcat[0], true);
+        headAllConcat.convertTo(headAllConcat, CV_32F);
+
+        // transpose - convert vector into one single row (1xn)
+        allInfo = headAllConcat.t();
+
+    }
+    else if(this->bodyPart == "Hands"){
+        // code for hands
+
+        double periodFPS = 1.0 / ((double)this->fps); // period of FPS = 1/fps
+        //Take left and right hand positions
+        std::vector<cv::Point> LHandPositions = positions[0];
+        std::vector<cv::Point> RHandPositions = positions[1];
+
+        // check if we have a minimum time for being analyzed (It depends on the fps and history size of the class)
+        double LHandPositionsDuraction = ((double)LHandPositions.size()) * periodFPS;
+        double RHandPositionsDuraction = ((double)RHandPositions.size()) * periodFPS;
+        if( (LHandPositionsDuraction < (this->minTimeToDetect)) || (RHandPositionsDuraction < (this->minTimeToDetect))){
+            std::cout << "SemanticDetector::detect -> No minimum time to analyze gestures! Minimum time:" << ( this->minTimeToDetect) << std::endl;
+            std::cout << "\tMinimum time:" << ( this->minTimeToDetect)
+            << " || Given time (Left hand): " << LHandPositionsDuraction
+            << " || Given time (right hand): " << RHandPositionsDuraction << std::endl;
+            return;
+        }
+
+        // Take only the newest samples within the minTimeToDetect
+        int index = (int) std::ceil( this->minTimeToDetect / periodFPS ); // get the number of newest samples that we want to keep
+        LHandPositions.erase(LHandPositions.begin(), LHandPositions.end() - index - 1); // erase oldest samples
+        RHandPositions.erase(RHandPositions.begin(), RHandPositions.end() - index - 1); // erase oldest samples
+
+        // Initialize vectors
+        //std::vector<double> LHAllConcat, RHAllConcat;
+        std::vector<std::vector<cv::Point>> positionsToDetect;
+        positionsToDetect.push_back(LHandPositions); // left hand always first
+        positionsToDetect.push_back(RHandPositions); // right hand always second
+
+        std::vector<std::vector<double>> allConcat;
+
+        // get hand features
+        getFeaturesVector(faceCenterPoint,
+                          pixelSizeInCmTemp,
+                          this->minTimeToDetect,
+                          (double)this->fps,
+                          this->interpolationTimeStep,
+                          positionsToDetect,
+                          allConcat);
+                          /*LHandPositions,
+                          RHandPositions,
+                          LHAllConcat,
+                          RHAllConcat
+                          */
+
+        // convert data to cv::Mat
+        cv::Mat LHAllInfo(allConcat[0], true);
+        cv::Mat RHAllInfo(allConcat[1], true);
+
+        LHAllInfo.convertTo(LHAllInfo, CV_32F);
+        RHAllInfo.convertTo(RHAllInfo, CV_32F);
+
+        // transpose - convert vector into one single row (1xn)
+        allInfo = LHAllInfo.t();
+        //allInfoR = RHAllInfo.t();
+
+    }
+    else {
+        std::cout << "ERROR!! SemanticDetector::Detect() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
         return;
     }
 
-    // Take only the newest samples within the minTimeToDetect
-    int index = (int) std::ceil( this->minTimeToDetect / periodFPS ); // get the number of newest samples that we want to keep
-    LHandPositions.erase(LHandPositions.begin(), LHandPositions.end() - index - 1); // erase oldest samples
-    RHandPositions.erase(RHandPositions.begin(), RHandPositions.end() - index - 1); // erase oldest samples
-
-
-
 // this section will be used to predict gestures with classifiers already created
-#ifndef TRAINING
-
-    std::vector<double> LHAllConcat, RHAllConcat;
-    getFeaturesVector(faceCenterPoint,
-                      pixelSizeInCmTemp,
-                      this->minTimeToDetect,
-                      (double)this->fps,
-                      this->interpolationTimeStep,
-                      LHandPositions,
-                      RHandPositions,
-                      LHAllConcat,
-                      RHAllConcat);
-
-    // convert data to cv::Mat
-    cv::Mat LHAllInfo(LHAllConcat, true);
-    cv::Mat RHAllInfo(RHAllConcat, true);
-
-    LHAllInfo.convertTo(LHAllInfo, CV_32F);
-
-    // transpose - convert vector into one single row (1xn)
-    LHAllInfo = LHAllInfo.t();
+//#ifndef TRAINING
 
     // load classifier
-    const char saveFilename[] = "LHClassifier.xml";
-    cv::Ptr<cv::ml::LogisticRegression> lr2 = cv::ml::StatModel::load<cv::ml::LogisticRegression>(saveFilename);
+    //const char saveFilename[] = "LHClassifier.xml";
+    cv::Ptr<cv::ml::LogisticRegression> lr2 = cv::ml::StatModel::load<cv::ml::LogisticRegression>(classifierName);
 
     // predict response (By Opencv)
     cv::Mat responses;
-    lr2->predict(LHAllInfo, responses);
+    lr2->predict(allInfo, responses);
 
     // predict response (By me - no binary)
     cv::Mat thetas = lr2->get_learnt_thetas();
-    cv::Mat X_bias = cv::Mat::ones(LHAllInfo.rows, 1, CV_32F);
-    cv::hconcat(X_bias, LHAllInfo, X_bias);
+    cv::Mat X_bias = cv::Mat::ones(allInfo.rows, 1, CV_32F);
+    cv::hconcat(X_bias, allInfo, X_bias);
     cv::Mat calc = X_bias * thetas.t();
     cv::Mat h;
     sigmoid(calc, h);
@@ -1378,7 +1658,7 @@ void SemanticDetector::detect(cv::Point faceCenterPoint,
     float h_float = h.at<float>(0,0);
     if(h_float >= trust){
         LHShake_Filter[rowNum] = 1;
-    }else {
+    } else {
         LHShake_Filter[rowNum] = 0;
     }
 
@@ -1399,50 +1679,98 @@ void SemanticDetector::detect(cv::Point faceCenterPoint,
         rowNum = 0;
     }
 
-#else // this section will be used to train and create classifiers
-    #ifdef TRAINING_SAVE_DATA
+//#else // this section will be used to train and create classifiers
+
+    //#ifdef TRAINING_SAVE_DATA
         /*
-         *  This part will analyze the videos, take data from of specific timestamps,
+         *  This part will analyze the videos, take data from specific timestamps,
          *  generate more data and save all in files.
         */
+/*
         std::cout << "================================" << std::endl;
         std::cout << "|  TRAINING_SAVE_DATA defined! |" << std::endl;
         std::cout << "================================" << std::endl;
 
-        std::string fileName, fullPath;
-        int gestureLabel;
+        if(this->bodyPart == "head"){
+            std::string fileName, fullPath;
+            int gestureLabel;
 
-        // If frame is the last one of the gesture
-        if(frameIndex == videosInfo.find(capVideoName)->second){
-            std::cout << "Taking data from " << capVideoName << " at frame " << frameIndex << std::endl;
+            // If frame is the last one of the gesture
+            if(frameIndex == videosInfo.find(capVideoName)->second){
+                std::cout << "Taking data from " << capVideoName << " at frame " << frameIndex << std::endl;
 
-            // save history into a file
-            fileName = capVideoName;
-            fullPath = pathOriginalData + fileName + ".yml";
-            gestureLabel = 3; // (REALLY BAD IMPLEMENTATION FOR NOW!!)
-                              //    1 - "RHShake"
-                              //    2 - "LHShake"
-                              //    3 - "StaticHandsUp"
-            saveDataInFile(fullPath,
-                           capVideoName,
-                           gestureLabel,
-                           pixelSizeInCmTemp,
-                           faceCenterPoint,
-                           LHandPositions,
-                           RHandPositions);
+                // save history into a file
+                fileName = capVideoName;
+                fullPath = pathOriginalData + fileName + ".yml"; // !! We should pass "pathOriginalData"  as a parameter
+                gestureLabel = 4; // (REALLY BAD IMPLEMENTATION FOR NOW!!)
+                                  //    1 - "RHShake"
+                                  //    2 - "LHShake"
+                                  //    3 - "StaticHandsUp"
+                                  //    4 - "Head nod"
+                                  //    5 - "Head shake"
 
-            // generate data with some deviations of the original one
-            generateDataFromOriginal(pathCreatedData,
-                                     capVideoName,
-                                     gestureLabel,
-                                     pixelSizeInCmTemp,
-                                     faceCenterPoint,
-                                     LHandPositions,
-                                     RHandPositions);
+                saveDataInFile(fullPath,
+                               capVideoName,
+                               gestureLabel,
+                               pixelSizeInCmTemp,
+                               faceCenterPoint,
+                               LHandPositions,
+                               RHandPositions);
+
+                // generate data with some deviations of the original one
+                //generateDataFromOriginal(pathCreatedData,
+                //                         capVideoName,
+                //                         gestureLabel,
+                //                         pixelSizeInCmTemp,
+                //                         faceCenterPoint,
+                //                         LHandPositions,
+                //                         RHandPositions);
+            }
         }
-    #endif // TRAINING_SAVE_DATA
+        else if (this->bodyPart == "hands"){
 
-#endif
+            std::string fileName, fullPath;
+            int gestureLabel;
+
+            // If frame is the last one of the gesture
+            if(frameIndex == videosInfo.find(capVideoName)->second){
+                std::cout << "Taking data from " << capVideoName << " at frame " << frameIndex << std::endl;
+
+                // save history into a file
+                fileName = capVideoName;
+                fullPath = pathOriginalData + fileName + ".yml";
+                gestureLabel = 3; // (REALLY BAD IMPLEMENTATION FOR NOW!!)
+                                  //    1 - "RHShake"
+                                  //    2 - "LHShake"
+                                  //    3 - "StaticHandsUp"
+                saveDataInFile(fullPath,
+                               capVideoName,
+                               gestureLabel,
+                               pixelSizeInCmTemp,
+                               faceCenterPoint,
+                               LHandPositions,
+                               RHandPositions);
+
+                // generate data with some deviations of the original one
+                generateDataFromOriginal(pathCreatedData,
+                                         capVideoName,
+                                         gestureLabel,
+                                         pixelSizeInCmTemp,
+                                         faceCenterPoint,
+                                         LHandPositions,
+                                         RHandPositions);
+            }
+
+        }
+        else {
+            std::cout << "ERROR!! SemanticDetector::Detect() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+            return;
+        }
+    */
+
+    //#endif // TRAINING_SAVE_DATA
+
+//#endif
 
 }
 

@@ -26,6 +26,17 @@ public:
 	double pixelSizeInCm = 0.25; // will be refined in the normalization phase
 	double normalizationScale = 0.25; // cm per pixel based on face detection.
 
+
+	//std::vector<cv::Point> positionHistory;
+	int historySize = 100;
+	int positionIndex = 0;
+	//std::array<cv::Point, historySize> positionHistory;
+	//std::vector<cv::Point> positionHistory{std::vector<cv::Point>(historySize, cv::Point(0,0)};
+    //std::vector< std::vector<cv::Point> > positionHistory = std::vector< std::vector<cv::Point> >(51);
+    //std::vector<cv::Point> positionHistory(100, cv::Point(0,0));
+    //std::vector<double> vector2(length, 0.0);
+    std::vector<cv::Point> positionHistory{std::vector<cv::Point>(historySize,cv::Point(0,0))};
+
 	FaceDetector();
 	~FaceDetector();
 
@@ -42,4 +53,8 @@ public:
 	bool setup();
 	void setVideoProperties(int width, int height);
 	void reset();
+
+	int getNextIndex(int index);
+	int getPreviousIndex(int index);
+
 };
