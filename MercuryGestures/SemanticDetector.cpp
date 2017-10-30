@@ -459,7 +459,8 @@ void SemanticDetector::saveDataInFile(std::string fullPath,
     }
 }
 
-void SemanticDetector::storeVideoData(cv::Point faceCenterPoint,
+void SemanticDetector::storeVideoData(int gestureLabel,
+                                      cv::Point faceCenterPoint,
                                       std::vector<std::vector<cv::Point>> &positions,
                                       double pixelSizeInCmTemp,
                                       int frameIndex){
@@ -473,17 +474,11 @@ void SemanticDetector::storeVideoData(cv::Point faceCenterPoint,
         std::cout << "Taking data from " << capVideoName << " at frame " << frameIndex << std::endl;
 
         std::string fileName, fullPath;
-        int gestureLabel;
 
         // save history into a file
         fileName = capVideoName;
         fullPath = pathOriginalData + fileName + ".yml";
-        gestureLabel = 5;   // (REALLY BAD IMPLEMENTATION FOR NOW!!)
-                            //    1 - "RHShake"
-                            //    2 - "LHShake"
-                            //    3 - "StaticHandsUp"
-                            //    4 - "Head nod"
-                            //    5 - "Head shake"
+
         saveDataInFile(fullPath,
                        capVideoName,
                        gestureLabel,
@@ -491,27 +486,16 @@ void SemanticDetector::storeVideoData(cv::Point faceCenterPoint,
                        faceCenterPoint,
                        positions);
 
-        if(this->bodyPart == "head"){
-            // are we gonna generate any extra data?
-        }
-        else if(this->bodyPart == "hands"){
+        // generate data with some deviations of the original one
+        generateDataFromOriginal(pathCreatedData,
+                                 capVideoName,
+                                 gestureLabel,
+                                 pixelSizeInCmTemp,
+                                 faceCenterPoint,
+                                 positions);
+                                 //LHandPositions,
+                                 //RHandPositions);
 
-            // (!!We need to change generateDataFromOriginal() in order to get the positions vector!!)
-            std::vector<cv::Point> LHandPositions = positions[0];
-            std::vector<cv::Point> RHandPositions = positions[1];
-
-            // generate data with some deviations of the original one
-            generateDataFromOriginal(pathCreatedData,
-                                     capVideoName,
-                                     gestureLabel,
-                                     pixelSizeInCmTemp,
-                                     faceCenterPoint,
-                                     LHandPositions,
-                                     RHandPositions);
-        }
-        else{
-            // Nothing yet
-        }
     }
 }
 
@@ -523,12 +507,11 @@ void SemanticDetector::generateDataFromOriginal(std::string dataPath,
                                                 int gestureLabel,
                                                 double pixelSizeInCmTemp,
                                                 cv::Point faceCenterPoint,
-                                                std::vector<cv::Point> LHandPositions,
-                                                std::vector<cv::Point> RHandPositions){
+                                                std::vector<std::vector<cv::Point>> positions){
+                                                //std::vector<cv::Point> LHandPositions,
+                                                //std::vector<cv::Point> RHandPositions){
     // We should make some checks like if dataPath exists or null parameters !!!!
 
-    // generate more data with hands history
-    std::vector<cv::Point> containerLH, containerRH;
     cv::Point auxPoint;
     int x ,y;
     std::string fileName, fullPath;
@@ -536,45 +519,102 @@ void SemanticDetector::generateDataFromOriginal(std::string dataPath,
     std::random_device rd;     // only used once to initialise (seed) engine
     std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
     std::uniform_int_distribution<int> uni(-2,2); // guaranteed unbiased
-    int numOfExtraData = 1000;
-    for(int i = 0; i < numOfExtraData; i++){
+    int numOfExtraData = 1000; // !!We should pass this value somewhere!!
 
-        // clear containers
-        containerLH.clear();
-        containerRH.clear();
+    if(this->bodyPart == "Head"){
+        // get original hands positions
+        std::vector<cv::Point> headPositions = positions[0];
 
-        // LH - create some variation of data based on the original one
-        for(int k = 0; k < LHandPositions.size(); k++){
-            x = LHandPositions[k].x + uni(rng);
-            y = LHandPositions[k].y + uni(rng);
-            cv::Point auxPoint(x,y);
-            containerLH.push_back(auxPoint);
+        // generate more data with original hands history
+        std::vector<cv::Point> containerHead;
+
+        for(int i = 0; i < numOfExtraData; i++){
+
+            // clear containers
+            containerHead.clear();
+
+            // Head - create some variation of data based on the original one
+            for(int k = 0; k < headPositions.size(); k++){
+                x = headPositions[k].x + uni(rng);
+                y = headPositions[k].y + uni(rng);
+                cv::Point auxPoint(x,y);
+                containerHead.push_back(auxPoint);
+            }
+
+            // create file name
+            fileName = capVideoName + "Generated" + std::to_string(i);
+            fullPath = dataPath + fileName + ".yml";
+
+            std::vector<std::vector<cv::Point>> containers;
+            containers.push_back(containerHead);
+
+            // Save data into a file
+            //(Probably would be better to serialize all data in a single file! Later!)
+            saveDataInFile(fullPath,
+                   capVideoName,
+                   gestureLabel,
+                   pixelSizeInCmTemp,
+                   faceCenterPoint,
+                   containers);
         }
 
-        // RH - create some variation of data based on the original one
-        for(int k = 0; k < RHandPositions.size(); k++){
-            x = RHandPositions[k].x + uni(rng);
-            y = RHandPositions[k].y + uni(rng);
-            cv::Point auxPoint(x,y);
-            containerRH.push_back(auxPoint);
-        }
-
-        // create file name
-        fileName = capVideoName + "Generated" + std::to_string(i);
-        fullPath = dataPath + fileName + ".yml";
-
-        std::vector<std::vector<cv::Point>> containers;
-        containers.push_back(containerLH);
-        containers.push_back(containerRH);
-        // save data into a file
-        //(Probably would be better to serialize all data in a single file! Later!)
-        saveDataInFile(fullPath,
-               capVideoName,
-               gestureLabel,
-               pixelSizeInCmTemp,
-               faceCenterPoint,
-               containers);
     }
+    else if(this->bodyPart == "Hands"){
+
+        // get original hands positions
+        std::vector<cv::Point> LHandPositions = positions[0];
+        std::vector<cv::Point> RHandPositions = positions[1];
+
+        // generate more data with original hands history
+        std::vector<cv::Point> containerLH, containerRH;
+
+        for(int i = 0; i < numOfExtraData; i++){
+
+            // clear containers
+            containerLH.clear();
+            containerRH.clear();
+
+            // LH - create some variation of data based on the original one
+            for(int k = 0; k < LHandPositions.size(); k++){
+                x = LHandPositions[k].x + uni(rng);
+                y = LHandPositions[k].y + uni(rng);
+                cv::Point auxPoint(x,y);
+                containerLH.push_back(auxPoint);
+            }
+
+            // RH - create some variation of data based on the original one
+            for(int k = 0; k < RHandPositions.size(); k++){
+                x = RHandPositions[k].x + uni(rng);
+                y = RHandPositions[k].y + uni(rng);
+                cv::Point auxPoint(x,y);
+                containerRH.push_back(auxPoint);
+            }
+
+            // create file name
+            fileName = capVideoName + "Generated" + std::to_string(i);
+            fullPath = dataPath + fileName + ".yml";
+
+            std::vector<std::vector<cv::Point>> containers;
+            containers.push_back(containerLH);
+            containers.push_back(containerRH);
+
+            // Save data into a file
+            //(Probably would be better to serialize all data in a single file! Later!)
+            saveDataInFile(fullPath,
+                   capVideoName,
+                   gestureLabel,
+                   pixelSizeInCmTemp,
+                   faceCenterPoint,
+                   containers);
+        }
+    }
+    else{
+        std::cout << "ERROR!! SemanticDetector::generateDataFromOriginal() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+        return;
+    }
+
+
+
 }
 
 /*

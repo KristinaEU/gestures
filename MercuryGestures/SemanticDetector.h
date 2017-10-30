@@ -21,6 +21,33 @@
 
 extern std::string capVideoName;    // this is used just for training propose
 
+static std::map<std::string, int> gestureLablesList = {
+        {"unkown", 0},
+
+        {"rightUpperBody",  1},
+        {"leftUpperBody",   2},
+        {"rightLowerBody",  3},
+        {"leftLowerBody",   4},
+        {"rightUpperArm",   5},
+        {"rightLowerArm",   6},
+        {"leftUpperArm",    7},
+        {"leftLowerArm",    8},
+        {"face",            9},
+
+        {"RHShake",         101},
+        {"LHShake",         102},
+        {"staticHandsUp",   103},
+
+        {"headShake",       201},
+        {"headNod",         202},
+        {"headLookLeft",    203},
+        {"headLookRight",   204},
+        {"headLookUp",      205},
+        {"headLookDown",    206},
+        {"resitLeft",       207},
+        {"resitRight",      208},
+        {"resitUp",         209}
+};
 
 struct GenerateStaticPositionInfo{
 
@@ -113,6 +140,9 @@ public:
     std::string pathRHData              = "data/SelectedData/RHShake/createdData/";
     std::string pathStaticHandsUpData   = "data/SelectedData/StaticHandsUp/createdData/";
 
+
+
+
 	SemanticDetector(int fps, std::string bodyPart);
 	~SemanticDetector();
 
@@ -142,7 +172,8 @@ public:
 
     void trainClassifier(InfoClassifier &infoClas);
 
-    void storeVideoData(cv::Point faceCenterPoint,
+    void storeVideoData(int gestureLabel,
+                        cv::Point faceCenterPoint,
                         std::vector<std::vector<cv::Point>> &positions,
                         double pixelSizeInCmTemp,
                         int frameIndex);
@@ -250,8 +281,9 @@ private:
                                   int gestureLabel,
                                   double pixelSizeInCmTemp,
                                   cv::Point faceCenterPoint,
-                                  std::vector<cv::Point> LHandPositions,
-                                  std::vector<cv::Point> RHandPositions);
+                                  std::vector<std::vector<cv::Point>> positions);
+//                                std::vector<cv::Point> LHandPositions,
+//                                std::vector<cv::Point> RHandPositions);
 
     void createListOfStaticPositions(int x,
                                      int y,

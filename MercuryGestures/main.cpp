@@ -766,9 +766,9 @@ int run(cv::VideoCapture& cap, int fps) {
                     const char headClassifier[] = "headClassifier.xml";
                     //headSemanticDetector.detect(headClassifier, faceCenterPoint, pixelSizeInCmTemp, headPositions, headCodeGesture, frameIndex);
                 #else
-                    std::cout << "================================" << std::endl;
-                    std::cout << "|  TRAINING defined!           |" << std::endl;
-                    std::cout << "================================" << std::endl;
+                    //std::cout << "================================" << std::endl;
+                    //std::cout << "|  TRAINING defined!           |" << std::endl;
+                    //std::cout << "================================" << std::endl;
                     #ifdef TRAINING_SAVE_DATA
                         std::cout << "================================" << std::endl;
                         std::cout << "|  TRAINING_SAVE_DATA defined! |" << std::endl;
@@ -779,7 +779,10 @@ int run(cv::VideoCapture& cap, int fps) {
 
                         // Parameters to add:
                         // storagePath, gestureLabel
-                        headSemanticDetector.storeVideoData(faceCenterPoint, positions, pixelSizeInCmTemp, frameIndex);
+                        std::string gesture = "headLookDown";
+                        int gestureLabel = gestureLablesList.find(gesture)->second;    // get the int number associated to the gesture
+                        std::cout << "---------------> gestureLabel = " << gestureLabel << std::endl;
+                        headSemanticDetector.storeVideoData(gestureLabel, faceCenterPoint, positions, pixelSizeInCmTemp, frameIndex);
                     #endif // TRAINING_SAVE_DATA
                 #endif
                 // -------------------------------------------------------------- //
@@ -957,11 +960,55 @@ void manage(int movieIndex) {
     videoList.push_back("StaticHandsUp04.mp4");
     */
 
+    /*
+    //Head Shake
     int numOfHeadShakeVideos = 50;
     for(int i = 0; i < numOfHeadShakeVideos; i++){
         std::string videoName = "headShake" + std::to_string(i) + ".mp4";
         videoList.push_back(videoName);
     }
+    */
+    /*
+    //Head Nod
+    int numOfHeadNodVideos = 50;
+    for(int i = 0; i < numOfHeadNodVideos; i++){
+        std::string videoName = "headNod" + std::to_string(i) + ".mp4";
+        videoList.push_back(videoName);
+    }
+    */
+    /*
+    //Head Look Left
+    int numOfHeadLookLeftVideos = 10;
+    for(int i = 0; i < numOfHeadLookLeftVideos; i++){
+        std::string videoName = "headLookLeft" + std::to_string(i) + ".mp4";
+        videoList.push_back(videoName);
+    }
+    */
+    /*
+    //Head Look Right
+    int numOfHeadLookRightVideos = 10;
+    for(int i = 0; i < numOfHeadLookRightVideos; i++){
+        std::string videoName = "headLookRight" + std::to_string(i) + ".mp4";
+        videoList.push_back(videoName);
+    }
+    */
+
+    /*
+    //Head Look Up
+    int numOfHeadLookUpVideos = 10;
+    for(int i = 0; i < numOfHeadLookUpVideos; i++){
+        std::string videoName = "headLookUp" + std::to_string(i) + ".mp4";
+        videoList.push_back(videoName);
+    }
+    */
+    /*
+    //Head Look Down
+    int numOfHeadLookDownVideos = 10;
+    for(int i = 0; i < numOfHeadLookDownVideos; i++){
+        std::string videoName = "headLookDown" + std::to_string(i) + ".mp4";
+        videoList.push_back(videoName);
+    }
+    */
 
 #else
 /*
@@ -1070,7 +1117,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef TRAINING
     std::cout << "|--- I'm in training mode! ---|" << std::endl;
-    /*
+
     int fps = 29; // just for now
     SemanticDetector handsSemanticDetector(fps, "Hands");
     //SemanticDetector headSemanticDetector(fps, "Head");
@@ -1079,7 +1126,7 @@ int main(int argc, char *argv[]) {
     // TRAINING_SAVE_DATA
     // handsSemanticDetector.storeVideoData(pathVideos, pathData, goalPoints);
 
-
+    /*
     // TRAINING_CREATE_NEW_CLASSIFIER
     InfoClassifier infoClas;
     infoClas.pathPositiveData   = "data/SelectedData/LHShake/createdData/";         // for positive gestures
@@ -1148,10 +1195,10 @@ int main(int argc, char *argv[]) {
     // detect semantic gestures
     // handsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // frameIndex can be not used for normal running
 
-    numberOfVideos = 50;
-    manage(numberOfVideos - 1);
+    //numberOfVideos = 10;
+    //manage(numberOfVideos - 1);
 #else
-    numberOfVideos = 50;//22;
+    numberOfVideos = 22;
     manage(numberOfVideos - 1);
 #endif
 
