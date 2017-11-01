@@ -94,6 +94,9 @@ struct TrainingSets {
 };
 
 struct InfoClassifier {
+
+    std::string newClassifierName;  // name of the new classifier when in training mode
+
     std::string pathPositiveData;    //= "data/SelectedData/LHShake/createdData/";         // for positive gestures
     std::string pathNegativeData;    //= "data/SelectedData/StaticHandsUp/createdData/";   // for negative gestures
     std::string pathClassifier;      //= "LHClassifier.xml";
@@ -182,10 +185,20 @@ public:
 private:
 
     float trust = 0.5; // classifier threshold
-    int LHFilterLength = 15;
-    std::vector<int> LHShake_Filter{std::vector<int>(LHFilterLength,0)};
+    int filterLength = 15;
+    std::vector<int> filterLogic{std::vector<int>(filterLength,0)};
+    std::vector<float> filterNumeric{std::vector<float>(filterLength,0)};
+
+    /*
+    std::map<std::string, int> rowNumMap = {
+        {"LHClassifier.xml",        0},
+        {"LRClassifier.xml",        0},
+        {"headShakeClassifier.xml", 0},
+        {"headNodClassifier.xml",   0},
+    };
+    */
     int rowNum = 0; // position number of the filter to be stored some value
-    bool flag_LHShake = false;  // LH Shake final flag detection
+    bool flag_filter = false;  // final flag detection
 
 
     template <typename T> void extendVectorRepeting (std::vector<T> &vect, int lenghtVec, std::vector<T> &vectOut);

@@ -545,8 +545,12 @@ int run(cv::VideoCapture& cap, int fps) {
 	ActivityGraph activityGraph(fps);
 	FaceDetector  faceDetector;
 
-	SemanticDetector handsSemanticDetector(fps, "Hands");
-	SemanticDetector headSemanticDetector(fps, "Head");
+	SemanticDetector LHShakeDetector(fps, "Hands");
+	SemanticDetector RHShakeDetector(fps, "Hands");
+    //SemanticDetector handsSemanticDetector(fps, "Hands");
+
+	SemanticDetector headShakeDetector(fps, "Head");
+	SemanticDetector headNodDetector(fps, "Head");
 
 
 	if (faceDetector.setup() == false)
@@ -615,6 +619,19 @@ int run(cv::VideoCapture& cap, int fps) {
 
 		cv::imshow("raw", frame);
         cv::imshow("gray", gray);
+
+
+        const char LHClassifier[]           = "LHClassifier.xml",
+                   RHClassifier[]           = "RHClassifier.xml",
+                   headShakeClassifier[]    = "headShakeClassifier.xml",
+                   headNodClassifier[]      = "headNodClassifier.xml";
+        // reset gesture code map
+        std::map<std::string,bool> gestureCodeMap = {
+            {LHClassifier, false },
+            {RHClassifier, false },
+            {headShakeClassifier, false },
+            {headNodClassifier, false }
+        };
 
 		// start detection of edges, face and skin
 		bool faceDetected = faceDetector.detect(gray);
@@ -769,30 +786,59 @@ int run(cv::VideoCapture& cap, int fps) {
                     //}
 
                     // detect hands semantic gestures
-                    float handsCodeGesture = 0.0;
-                    const char LHClassifier[] = "LHClassifier.xml";
-                    //handsSemanticDetector.detect(LHClassifier, faceCenterPoint, pixelSizeInCmTemp, handPositions, handsCodeGesture, frameIndex); // indexFrame can be not used for normal running
+                    float LHShakeVal    = 0.0,
+                          RHShakeVal    = 0.0,
+                          headShakeVal  = 0.0,
+                          headNodVal    = 0.0;
+
+                    LHShakeDetector.detect(LHClassifier, faceCenterPoint, pixelSizeInCmTemp, handPositions, LHShakeVal, frameIndex); // indexFrame can be not used for normal running
+                    RHShakeDetector.detect(RHClassifier, faceCenterPoint, pixelSizeInCmTemp, handPositions, RHShakeVal, frameIndex); // indexFrame can be not used for normal running
+
+                    //handsSemanticDetector.detect(LHClassifier, faceCenterPoint, pixelSizeInCmTemp, handPositions, LHShakeVal, frameIndex); // indexFrame can be not used for normal running
+                    headShakeDetector.detect(headShakeClassifier, faceCenterPoint, pixelSizeInCmTemp, headPositions, headShakeVal, frameIndex);
+                    headNodDetector.detect(headNodClassifier, faceCenterPoint, pixelSizeInCmTemp, headPositions, headNodVal, frameIndex);
 
 
+                    float threshold_trust = 0.5;
+
+                    // ---- update gestureCodeMap ----
+                    // Hands
+                    std::cout << "LHShakeVal = " << LHShakeVal << std::endl;
+                    std::cout << "RHShakeVal = " << RHShakeVal << std::endl;
+                    if(LHShakeVal > threshold_trust){
+                        gestureCodeMap.at(LHClassifier) = true;
+                    }
+                    if(RHShakeVal > threshold_trust){
+                        gestureCodeMap.at(RHClassifier) = true;
+                    }
+
+                    // Head
+                    // decide head gesture (head shake or head nod - not simultaneous)
+                    std::cout << "headShakeVal = " << headShakeVal << std::endl;
+                    std::cout << "headNodVal = "   << headNodVal << std::endl;
+
+                    if(headShakeVal < threshold_trust){
+                        gestureCodeMap.at(headShakeClassifier) = false;
+                    }
+                    if(headNodVal < threshold_trust){
+                        gestureCodeMap.at(headNodClassifier) = false;
+                    }
+
+                    if((headShakeVal >= threshold_trust) || (headNodVal >= threshold_trust)){
+                        if(headShakeVal > headNodVal){
+                            gestureCodeMap.at(headShakeClassifier) = true;
+                            gestureCodeMap.at(headNodClassifier) = false;
+                        }else{
+                            gestureCodeMap.at(headShakeClassifier) = false;
+                            gestureCodeMap.at(headNodClassifier) = true;
+                        }
+                    }
 
 
-                    const char headShakeClassifier[] = "headShakeClassifier.xml";
-                    const char headNodClassifier[] = "headNodClassifier.xml";
-
-                    float headShakeVal = 0.0,
-                          headNodVal = 0.0;
-
-                    headSemanticDetector.detect(headShakeClassifier, faceCenterPoint, pixelSizeInCmTemp, headPositions, headShakeVal, frameIndex);
-                    //headSemanticDetector.detect(headNodClassifier, faceCenterPoint, pixelSizeInCmTemp, headPositions, headNodVal, frameIndex);
-
-                    // detect head semantic gestures
-                    //float headCodeGesture = 0.0;
-                    // max()
-
-                    //if(headShakeVal > headShakeVal){
-                    //    headCodeGesture = gestureLablesList.find("headShake")->second;
-                    //}
-
+                    std::cout << LHClassifier           << " \t\t -> "  << gestureCodeMap.at(LHClassifier)          << std::endl;
+                    std::cout << RHClassifier           << " \t\t -> "  << gestureCodeMap.at(RHClassifier)          << std::endl;
+                    std::cout << headShakeClassifier    << " \t -> "    << gestureCodeMap.at(headShakeClassifier)   << std::endl;
+                    std::cout << headNodClassifier      << " \t\t -> "  << gestureCodeMap.at(headNodClassifier)     << std::endl;
 
                 #else
                     //std::cout << "================================" << std::endl;
@@ -1156,8 +1202,9 @@ void manage(int movieIndex) {
 void getInfoClas(std::string bodyPart, InfoClassifier &infoClas_output){
 
     if(bodyPart == "Head"){
+        infoClas_output.newClassifierName     = "headNodClassifier.xml";       // classifier name while training training
 
-        infoClas_output.pathPositiveData   = "data/SelectedData/headShake/createdData/";    // for positive gestures
+        infoClas_output.pathPositiveData   = "data/SelectedData/headNod/createdData/";    // for positive gestures
         infoClas_output.pathNegativeData   = "data/negativeData/";                          // for negative gestures
 
 
@@ -1169,8 +1216,9 @@ void getInfoClas(std::string bodyPart, InfoClassifier &infoClas_output){
         //infoClas_output.saveFilename
     }
     else if(bodyPart == "Hands"){
+        infoClas_output.newClassifierName     = "RHClassifier.xml";
 
-        infoClas_output.pathPositiveData   = "data/SelectedData/LHShake/createdData/";         // for positive gestures
+        infoClas_output.pathPositiveData   = "data/SelectedData/RHShake/createdData/";         // for positive gestures
         infoClas_output.pathNegativeData   = "data/SelectedData/StaticHandsUp/createdData/";   // for negative gestures
         infoClas_output.pathClassifier     = "classifier/headShakeClassifier.xml";                               // classifier path
 
@@ -1250,6 +1298,7 @@ int main(int argc, char *argv[]) {
     SemanticDetector headSemanticDetector(fps, head_Str);
 
 
+
     // TRAINING_SAVE_DATA
     // handsSemanticDetector.storeVideoData(pathVideos, pathData, goalPoints);
 
@@ -1259,7 +1308,7 @@ int main(int argc, char *argv[]) {
     getInfoClas(head_Str, infoClasHead);
     getInfoClas(hands_Str, infoClasHands);
 
-    headSemanticDetector.trainClassifier(infoClasHead);
+    //headSemanticDetector.trainClassifier(infoClasHead);
     //handsSemanticDetector.trainClassifier(infoClasHands);
 
     // detect semantic gestures

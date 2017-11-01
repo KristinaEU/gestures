@@ -1833,7 +1833,7 @@ void SemanticDetector::logisticsTrain(InfoClassifier &infoClas,
     int iterations,
         miniBatchSize = 1;
 
-    std::vector<int> iterationsArray = {10, 500};
+    std::vector<int> iterationsArray = {10, 100};
     std::cout << "learningRate  = " << learningRate << std::endl;
 
     for(int i = 0; i < iterationsArray.size(); i++){
@@ -1865,7 +1865,8 @@ void SemanticDetector::logisticsTrain(InfoClassifier &infoClas,
         std::cout << "done!" << std::endl;
 
         // save the classifier
-        const char saveFilename[] = "headShakeClassifier.xml";
+        //const char saveFilename[] = infoClas.classifierName;
+        std::string saveFilename = infoClas.newClassifierName;
         std::cout << "saving the classifier to " << saveFilename << std::endl;
         lr1->save(saveFilename);
 
@@ -2031,8 +2032,16 @@ void SemanticDetector::detect(const char classifierName[],
         RHAllInfo.convertTo(RHAllInfo, CV_32F);
 
         // transpose - convert vector into one single row (1xn)
-        allInfo = LHAllInfo.t();
-        //allInfoR = RHAllInfo.t();
+        // !!----------------------------------------------!!
+        // !! ---- BAD IMPLEMENTATION --- just for now ----!!
+        // !!----------------------------------------------!!
+        //if(classifierName == "LHClassifier.xml"){
+        //    std::cout << "HERE 1" << std::endl;
+            allInfo = LHAllInfo.t();
+        //}else{
+        //    std::cout << "HERE 2" << std::endl;
+        //    allInfo = RHAllInfo.t();
+        //}
 
     }
     else {
@@ -2059,26 +2068,37 @@ void SemanticDetector::detect(const char classifierName[],
 
     // add responses to the filter according with certain level of trust
     float h_float = h.at<float>(0,0);
+
+    //int rowNum = rowNumMap.at(classifierName);
+
+    filterNumeric[rowNum] = h_float;
+    //std::cout << "filterNumeric[rowNum] = " << filterNumeric[rowNum] << std::endl;
+
     if(h_float >= trust){
-        LHShake_Filter[rowNum] = 1;
+        filterLogic[rowNum] = 1;
     } else {
-        LHShake_Filter[rowNum] = 0;
+        filterLogic[rowNum] = 0;
     }
 
     // if we have all filter filled with positive detections than
-    int sum = std::accumulate(LHShake_Filter.begin(), LHShake_Filter.end(), 0);
-    if( sum >= LHFilterLength ){
-        flag_LHShake = true;    // turn the flat to true
-        gestureOutput = 101.0;
+    int sumLogic = std::accumulate(filterLogic.begin(), filterLogic.end(), 0);
+
+    if( sumLogic >= filterLength ){
+        flag_filter = true;    // turn the flat to true
+        float sumNumeric = std::accumulate(filterNumeric.begin(), filterNumeric.end(), 0.0);
+        gestureOutput = sumNumeric / ( (float) filterNumeric.size() ); // returns the average value
     }else{
-        flag_LHShake = false;   // turn the flat to false
-        gestureOutput = 100.0;
+        flag_filter = false;   // turn the flat to false
+        gestureOutput = 0.0;
     }
-    std::cout << "h = " << h << " \tflag_LHShake = " << flag_LHShake << std::endl;
+
+    //std::cout << "h = " << h << " \tflag_LHShake = " << flag_filter << std::endl;
 
     // actualize rowNum
+    //rowNumMap[classifierName] = rowNum+=1;
     rowNum++;
-    if( (rowNum % LHFilterLength) == 0 ){
+    if( (rowNum % filterLength) == 0 ){
+        //rowNumMap[classifierName] = 0;
         rowNum = 0;
     }
 

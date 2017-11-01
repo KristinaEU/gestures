@@ -2,6 +2,60 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
+	<File name="../MercuryGestures/SemanticDetector.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="7191" topLine="63" />
+		</Cursor>
+		<Folding>
+			<Collapse line="23" />
+			<Collapse line="51" />
+			<Collapse line="67" />
+			<Collapse line="89" />
+		</Folding>
+	</File>
+	<File name="../MercuryGestures/ActivityGraph.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="942" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../MercuryGestures/FaceDetector.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1881" topLine="21" />
+		</Cursor>
+	</File>
+	<File name="../MercuryGestures/main.cpp" open="1" top="0" tabpos="1" split="2" active="1" splitpos="32" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="34632" topLine="484" />
+			<Cursor2 position="26849" topLine="50" />
+		</Cursor>
+		<Folding>
+			<Collapse line="32" />
+			<Collapse line="200" />
+			<Collapse line="319" />
+			<Collapse line="913" />
+			<Collapse line="922" />
+			<Collapse line="926" />
+			<Collapse line="931" />
+			<Collapse line="936" />
+			<Collapse line="939" />
+			<Collapse line="942" />
+			<Collapse line="946" />
+			<Collapse line="949" />
+			<Collapse line="954" />
+			<Collapse line="971" />
+			<Collapse line="1000" />
+			<Collapse line="1028" />
+			<Collapse line="1045" />
+			<Collapse line="1053" />
+			<Collapse line="1061" />
+			<Collapse line="1070" />
+			<Collapse line="1078" />
+			<Collapse line="1088" />
+			<Collapse line="1113" />
+			<Collapse line="1137" />
+			<Collapse line="1201" />
+		</Folding>
+	</File>
 	<File name="../MercuryGestures/HandDetector.h" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="3551" topLine="0" />
@@ -12,9 +66,9 @@
 			<Cursor1 position="339" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../MercuryGestures/MovementDetector.cpp" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../MercuryGestures/SkinDetector.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1314" topLine="0" />
+			<Cursor1 position="46" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="../MercuryGestures/Hand.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -22,12 +76,20 @@
 			<Cursor1 position="31995" topLine="39" />
 		</Cursor>
 	</File>
-	<File name="../MercuryGestures/SkinDetector.cpp" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../MercuryGestures/MercuryCore.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="71" topLine="0" />
+			<Cursor1 position="285" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="26" />
+		</Folding>
+	</File>
+	<File name="../MercuryGestures/util.cpp" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../MercuryGestures/FaceDetector.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../MercuryGestures/FaceDetector.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="729" topLine="0" />
 		</Cursor>
@@ -37,26 +99,20 @@
 			<Cursor1 position="126" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../MercuryGestures/SemanticDetector.h" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../MercuryGestures/SkinDetector.cpp" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="6570" topLine="78" />
-		</Cursor>
-		<Folding>
-			<Collapse line="23" />
-			<Collapse line="51" />
-			<Collapse line="67" />
-			<Collapse line="89" />
-		</Folding>
-	</File>
-	<File name="../MercuryGestures/FaceDetector.cpp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1881" topLine="21" />
+			<Cursor1 position="71" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../MercuryGestures/SemanticDetector.cpp" open="1" top="1" tabpos="5" split="2" active="1" splitpos="984" zoom_1="0" zoom_2="0">
+	<File name="../MercuryGestures/HandDetector.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="85128" topLine="280" />
-			<Cursor2 position="76944" topLine="1799" />
+			<Cursor1 position="9354" topLine="489" />
+		</Cursor>
+	</File>
+	<File name="../MercuryGestures/SemanticDetector.cpp" open="1" top="1" tabpos="4" split="2" active="1" splitpos="32" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="80114" topLine="402" />
+			<Cursor2 position="85711" topLine="1894" />
 		</Cursor>
 		<Folding>
 			<Collapse line="0" />
@@ -65,41 +121,45 @@
 			<Collapse line="49" />
 			<Collapse line="82" />
 			<Collapse line="123" />
-			<Collapse line="152" />
-			<Collapse line="167" />
-			<Collapse line="236" />
-			<Collapse line="306" />
-			<Collapse line="462" />
-			<Collapse line="538" />
-			<Collapse line="582" />
-			<Collapse line="704" />
-			<Collapse line="729" />
+			<Collapse line="148" />
+			<Collapse line="174" />
+			<Collapse line="252" />
+			<Collapse line="454" />
+			<Collapse line="512" />
+			<Collapse line="554" />
+			<Collapse line="561" />
+			<Collapse line="598" />
+			<Collapse line="720" />
+			<Collapse line="722" />
+			<Collapse line="745" />
 			<Collapse line="764" />
-			<Collapse line="816" />
-			<Collapse line="840" />
-			<Collapse line="946" />
-			<Collapse line="953" />
-			<Collapse line="983" />
-			<Collapse line="1015" />
-			<Collapse line="1022" />
-			<Collapse line="1041" />
-			<Collapse line="1115" />
-			<Collapse line="1140" />
-			<Collapse line="1155" />
-			<Collapse line="1201" />
-			<Collapse line="1338" />
-			<Collapse line="1403" />
-			<Collapse line="1447" />
-			<Collapse line="1554" />
-			<Collapse line="1601" />
-			<Collapse line="1735" />
-			<Collapse line="1767" />
-			<Collapse line="1805" />
-			<Collapse line="1915" />
-			<Collapse line="1956" />
-			<Collapse line="2014" />
-			<Collapse line="2064" />
-			<Collapse line="2068" />
+			<Collapse line="780" />
+			<Collapse line="800" />
+			<Collapse line="832" />
+			<Collapse line="839" />
+			<Collapse line="856" />
+			<Collapse line="945" />
+			<Collapse line="951" />
+			<Collapse line="962" />
+			<Collapse line="969" />
+			<Collapse line="999" />
+			<Collapse line="1031" />
+			<Collapse line="1038" />
+			<Collapse line="1057" />
+			<Collapse line="1135" />
+			<Collapse line="1153" />
+			<Collapse line="1164" />
+			<Collapse line="1179" />
+			<Collapse line="1225" />
+			<Collapse line="1362" />
+			<Collapse line="1427" />
+			<Collapse line="1578" />
+			<Collapse line="1759" />
+			<Collapse line="1762" />
+			<Collapse line="1791" />
+			<Collapse line="1799" />
+			<Collapse line="1829" />
+			<Collapse line="1939" />
 		</Folding>
 	</File>
 	<File name="../MercuryGestures/ActivityGraph.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -107,45 +167,9 @@
 			<Cursor1 position="854" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../MercuryGestures/util.cpp" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../MercuryGestures/MovementDetector.cpp" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="0" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="../MercuryGestures/main.cpp" open="1" top="0" tabpos="1" split="2" active="1" splitpos="969" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="33317" topLine="228" />
-			<Cursor2 position="33286" topLine="15" />
-		</Cursor>
-		<Folding>
-			<Collapse line="32" />
-			<Collapse line="200" />
-			<Collapse line="319" />
-			<Collapse line="336" />
-			<Collapse line="414" />
-		</Folding>
-	</File>
-	<File name="../MercuryGestures/SkinDetector.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="46" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="../MercuryGestures/MercuryCore.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="302" topLine="0" />
-		</Cursor>
-		<Folding>
-			<Collapse line="26" />
-		</Folding>
-	</File>
-	<File name="../MercuryGestures/HandDetector.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="9354" topLine="489" />
-		</Cursor>
-	</File>
-	<File name="../MercuryGestures/ActivityGraph.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="942" topLine="0" />
+			<Cursor1 position="1314" topLine="0" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

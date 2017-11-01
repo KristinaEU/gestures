@@ -1,0 +1,117 @@
+|--- I'm in training mode! ---|
+Reading positive data...
+	LHandPositionsList_positiveData size = 25000
+DONE
+Reading negative data...
+	LHandPositionsList_negativeData size = 5000
+DONE
+Generating static positions data...
+	x_start =  60
+	x_step =   60
+	x_end =    500
+	y_start =  50
+	y_step =   50
+	y_end =    300
+	staticPositions_Generated size = 40000
+DONE
+Generating elliptical positions data...
+	c1_start =  150
+	c1_step =   62
+	c1_end =    375
+	c2_start =  75
+	c2_step =   75
+	c2_end =    300
+	a_start =   20
+	a_step =    10
+	a_end =     30
+	b_start =   20
+	b_step =    10
+	b_end =     30
+	f_start =   0.5
+	f_step =    0.5
+	f_end =     2
+	ellipticalPositionsList_Generated size = 12000
+DONE
+LH_PositiveData_MatList  => rows: 25000, cols: 2549
+RH_PositiveData_MatList  => rows: 25000, cols: 2549
+LH_NegativeData_MatList  => rows: 5000, cols: 2549
+RH_NegativeData_MatList  => rows: 5000, cols: 2549
+LH_StaticPosGen_MatList   => rows: 40000, cols: 2549
+RH_StaticPosGen_MatList   => rows: 40000, cols: 2549
+LH_EllipticalPosGen_MatList   => rows: 12000, cols: 2549
+RH_EllipticalPosGen_MatList   => rows: 12000, cols: 2549
+--- Data concatenations ---
+LH_AllFalsePos  => rows: 57000, cols: 2549
+RH_AllFalsePos  => rows: 5000, cols: 2549
+LH_AllTruePos   => rows: 25000, cols: 2549
+RH_AllTruePos   => rows: 25000, cols: 2549
+trainPerc = 0.6	 cvPerc = 0.2	 testPerc = 0.2
+firstLimit = 600	 secondLimit = 800
+trainPerc = 0.6	 cvPerc = 0.2	 testPerc = 0.2
+firstLimit = 600	 secondLimit = 800
+data_train   => rows: 49200, cols: 2549
+labels_train => rows: 49200, cols: 1
+data_CV      => rows: 16400, cols: 2549
+labels_CV    => rows: 16400, cols: 1
+data_test    => rows: 16400, cols: 2549
+labels_test  => rows: 16400, cols: 1
+learningRate  = 10000
+/-----------------------------------------/
+iterations    = 10
+setting training parameters...
+training...
+	elapsed time: 23.5342s
+done!
+saving the classifier to RHClassifier.xml
+Accuracy: 95.8537%
+Precision: 0.880282
+Recall: 1
+F1Score: 0.93633
+data_train: 
+a1 = [5866.2412]
+a2 = [-10060.575]
+J1 = [0.32371578]
+J2 = [14903.974]
+	J = [14904.297]
+data_CV: 
+a1 = [1940.152]
+a2 = [-3346.4158]
+J1 = [0.32235169]
+J2 = [4967.9912]
+	J = [4968.3135]
+data_test: 
+a1 = [1938.3091]
+a2 = [-3344.1753]
+J1 = [0.3221027]
+J2 = [4967.9912]
+	J = [4968.3135]
+/-----------------------------------------/
+iterations    = 100
+setting training parameters...
+training...
+	elapsed time: 149.436s
+done!
+saving the classifier to RHClassifier.xml
+Accuracy: 99.0671%
+Precision: 0.970309
+Recall: 1
+F1Score: 0.984931
+data_train: 
+a1 = [2533.1624]
+a2 = [-3573.1421]
+J1 = [0.12411188]
+J2 = [141311.02]
+	J = [141311.14]
+data_CV: 
+a1 = [826.58307]
+a2 = [-1184.5807]
+J1 = [0.12263194]
+J2 = [47103.672]
+	J = [47103.793]
+data_test: 
+a1 = [823.75317]
+a2 = [-1181.9965]
+J1 = [0.12230181]
+J2 = [47103.672]
+	J = [47103.793]
+
