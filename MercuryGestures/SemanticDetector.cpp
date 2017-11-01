@@ -82,14 +82,20 @@ void SemanticDetector::scaleAndMeanNormalization(cv::Point &faceCenterPoint,
                                 std::vector<double> &xNormalizedOutput,
                                 std::vector<double> &yNormalizedOutput){
 
+    // We should make some checks like positions.size != 0, ...
+
+
     cv::Point centerPoint;
     if(this->bodyPart == "Head") {
         cv::Point zero(0, 0);
         cv::Point sum  = std::accumulate(positions.begin(), positions.end(), zero);
-        cv::Point centerPoint(sum.x / positions.size(), sum.y / positions.size());
+        cv::Point centerFace(sum.x / positions.size(), sum.y / positions.size());
+        centerPoint = centerFace;
+        //std::cout << "centerPoint = " << centerPoint << std::endl;
+
     }
     else if(this->bodyPart == "Hands") {
-        cv::Point centerPoint = faceCenterPoint;
+        centerPoint = faceCenterPoint;
     }
     else {
         std::cout << "ERROR!! SemanticDetector::scaleAndMeanNormalization() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
@@ -102,12 +108,16 @@ void SemanticDetector::scaleAndMeanNormalization(cv::Point &faceCenterPoint,
 
         // calculate the distance from hand to face
         tempPoint = positions[i] - centerPoint;
+
         //Normalize x and y components
         x = ((double)tempPoint.x) * pixelSizeInCmTemp / this->normalizationFaceHandDistance;
         y = ((double)tempPoint.y) * pixelSizeInCmTemp / this->normalizationFaceHandDistance;
+
         xNormalizedOutput.push_back(x);
         yNormalizedOutput.push_back(y);
     }
+    cv::Mat aux(xNormalizedOutput, true);
+    //std::cout << "xNormalizedOutput = " << aux << std::endl;
 }
 
 
@@ -174,6 +184,15 @@ void SemanticDetector::getHeadFeaturesVector(cv::Point &faceCenterPoint,
     getLinearInterpolation(minTimeToDetect, periodFPS, interpolationTimeStep, xHeadNormalized, xHeadInterpolated);
     getLinearInterpolation(minTimeToDetect, periodFPS, interpolationTimeStep, yHeadNormalized, yHeadInterpolated);
 
+    // get abs of positions
+    std::vector<double> xHeadInterpolated_abs, yHeadInterpolated_abs;
+    for(int i = 0; i < xHeadInterpolated.size(); i++ ){
+        xHeadInterpolated_abs.push_back(std::abs(xHeadInterpolated[i]));
+    }
+        for(int i = 0; i < yHeadInterpolated.size(); i++ ){
+        yHeadInterpolated_abs.push_back(std::abs(yHeadInterpolated[i]));
+    }
+
     // Add position Polynomials as features
     /*
         degree = 6;
@@ -190,8 +209,8 @@ void SemanticDetector::getHeadFeaturesVector(cv::Point &faceCenterPoint,
     double polVal;
     int degree = 6;
 
-    for(int i = 0; i < xHInterpolated.size(); i++) {
-        double valX= xHInterpolated[i], valY = yHInterpolated[i];
+    for(int i = 0; i < xHeadInterpolated.size(); i++) {
+        double valX= xHeadInterpolated[i], valY = yHeadInterpolated[i];
         for(int j = 1; j < degree; j++){
             for(int k = 0; k < j; k++){
                 polVal = std::pow(valX, j - k) * std::pow(valY,k);
@@ -215,6 +234,10 @@ void SemanticDetector::getHeadFeaturesVector(cv::Point &faceCenterPoint,
     // First velocities x, than velocities y, than position Polynomials
     featuresOutput.insert( featuresOutput.end(), xHInterpolatedVelocity.begin(), xHInterpolatedVelocity.end() );
     featuresOutput.insert( featuresOutput.end(), yHInterpolatedVelocity.begin(), yHInterpolatedVelocity.end() );
+
+    featuresOutput.insert( featuresOutput.end(), xHeadInterpolated_abs.begin(), xHeadInterpolated_abs.end() );
+    featuresOutput.insert( featuresOutput.end(), yHeadInterpolated_abs.begin(), yHeadInterpolated_abs.end() );
+
     //featuresOutput.insert( featuresOutput.end(), polFeatures.begin(), polFeatures.end() );
     //featuresOutput.insert( featuresOutput.end(), polVelocitiesFeatures.begin(), polVelocitiesFeatures.end() );
     //std::cout << "featuresOutput => " << featuresOutput.size() << std::endl;
@@ -297,8 +320,12 @@ void SemanticDetector::getDataFromFiles(std::string             directoryPath,
                                         std::vector<double>     &fpsListOutput,
                                         //std::vector<double>     &interpolationTimeStepListOutput,
                                         std::vector<int>        &gestureLabelListOutput,
-                                        std::vector< std::vector<cv::Point> > &LHandPositionsListOutput,
-                                        std::vector< std::vector<cv::Point> > &RHandPositionsListOutput){
+                                        std::vector<std::vector< std::vector<cv::Point>>> &positionsListOutput){
+
+    // list with all vectors of all files
+    std::vector< std::vector<cv::Point> > headPositionsList,
+                                          LHandPositionsList,
+                                          RHandPositionsList;
 
     // Get list of files to take data from
     std::vector<std::string> fileNameList;
@@ -322,27 +349,52 @@ void SemanticDetector::getDataFromFiles(std::string             directoryPath,
         return;
     }
 
-    std::vector<int> LHandPositionsX, LHandPositionsY, RHandPositionsX, RHandPositionsY;
+    std::vector<int> headPositionsX,  headPositionsY,
+                     LHandPositionsX, LHandPositionsY,
+                     RHandPositionsX, RHandPositionsY;
 
     int faceCenterPointX, faceCenterPointY;
     double pixelSizeInCmTemp;
     cv::Mat data;
+
     // for each file take the data
     std::string fullPath, videoName;
     int gestureLabel;
     for(int i = 0; i < fileNameList.size(); i++){
-        std::vector<cv::Point> LHandPositions, RHandPositions;
+
+        // initialize vector to hold cv::Point positions
+        std::vector<cv::Point> headPositions, LHandPositions, RHandPositions;
 
         fileName = fileNameList.at(i);
         fullPath = directoryPath + fileName;
         //std::cout << "Reading file: " << fullPath << std::endl;
+
+        // open file
         cv::FileStorage file;
         if(file.open(fullPath, cv::FileStorage::READ)){
-            //std::cout << "file opened!" << std::endl;
-            file["LHandPositionsX"] >> LHandPositionsX;
-            file["LHandPositionsY"] >> LHandPositionsY;
-            file["RHandPositionsX"] >> RHandPositionsX;
-            file["RHandPositionsY"] >> RHandPositionsY;
+
+            if(this->bodyPart == "Head"){
+                file["headPositionsX"] >> headPositionsX;
+                file["headPositionsY"] >> headPositionsY;
+
+                //cv::Mat headPositionsX_MAT(headPositionsX, true);
+                //std::cout << "headPositionsX = " << headPositionsX_MAT << std::endl;
+            }
+            else if(this->bodyPart == "Hands"){
+                file["LHandPositionsX"] >> LHandPositionsX;
+                file["LHandPositionsY"] >> LHandPositionsY;
+                file["RHandPositionsX"] >> RHandPositionsX;
+                file["RHandPositionsY"] >> RHandPositionsY;
+
+                //cv::Mat LHandPositionsX_MAT(LHandPositionsX, true);
+                //std::cout << "LHandPositionsX = " << LHandPositionsX_MAT << std::endl;
+
+            }
+            else{
+                std::cout << "ERROR!! SemanticDetector::getDataFromFiles() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+                return;
+            }
+
 
             file["faceCenterPointX"] >> faceCenterPointX;
             file["faceCenterPointY"] >> faceCenterPointY;
@@ -359,23 +411,60 @@ void SemanticDetector::getDataFromFiles(std::string             directoryPath,
         }
 
         // Put information together
-        double periodFPS = 1.0 / fps;
         cv::Point faceCenterPoint(faceCenterPointX, faceCenterPointY);
-        for(int i = 0; i < LHandPositionsY.size(); i++){
-            LHandPositions.push_back( cv::Point(LHandPositionsX[i], LHandPositionsY[i]) );
-            RHandPositions.push_back( cv::Point(RHandPositionsX[i], RHandPositionsY[i]) );
+
+
+
+
+        if(this->bodyPart == "Head"){
+            for(int i = 0; i < headPositionsY.size(); i++){
+                headPositions.push_back( cv::Point(headPositionsX[i], headPositionsY[i]) );
+            }
+        }else if(this->bodyPart == "Hands"){
+            for(int i = 0; i < LHandPositionsY.size(); i++){
+                LHandPositions.push_back( cv::Point(LHandPositionsX[i], LHandPositionsY[i]) );
+                RHandPositions.push_back( cv::Point(RHandPositionsX[i], RHandPositionsY[i]) );
+            }
+        }else
+        {
+            std::cout << "ERROR!! SemanticDetector::getDataFromFiles() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+            return;
         }
 
-        //std::cout << " HEREEEE1 i = " << i << std::endl;
-        // push data into the lists
+
+        // push data into lists
         faceCenterPointListOutput.push_back(faceCenterPoint);
         pixelSizeInCmTempListOutput.push_back(pixelSizeInCmTemp);
         fpsListOutput.push_back(fps);
-        LHandPositionsListOutput.push_back(LHandPositions);
-        RHandPositionsListOutput.push_back(RHandPositions);
         gestureLabelListOutput.push_back(gestureLabel);
 
+        if(this->bodyPart == "Head"){
+            headPositionsList.push_back(headPositions);
+        }else if(this->bodyPart == "Hands"){
+            LHandPositionsList.push_back(LHandPositions);
+            RHandPositionsList.push_back(RHandPositions);
+        }else{
+            std::cout << "ERROR!! SemanticDetector::getDataFromFiles() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+                return;
+        }
+
+
+
+    } // end for loop
+
+    if(this->bodyPart == "Head"){
+        positionsListOutput.push_back(headPositionsList);
+
+
+
+    }else if(this->bodyPart == "Hands"){
+        positionsListOutput.push_back(LHandPositionsList);
+        positionsListOutput.push_back(RHandPositionsList);
+    }else{
+        std::cout << "ERROR!! SemanticDetector::getDataFromFiles() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+        return;
     }
+
 }
 
 
@@ -762,21 +851,42 @@ void SemanticDetector::getFeaturedData(std::vector<cv::Point>               &fac
                                        double                               minTimeToDetect,
                                        std::vector<double>                  &fpsList,
                                        double                               interpolationTimeStep,
-                                       std::vector<std::vector<cv::Point>>  &LHandPositionsList,
-                                       std::vector<std::vector<cv::Point>>  &RHandPositionsList,
-                                       cv::Mat                              &LHFeaturesMatListOutput,
-                                       cv::Mat                              &RHFeaturesMatListOutput){
+                                       std::vector<std::vector<std::vector<cv::Point>>> positionsList,
+                                       //std::vector<std::vector<cv::Point>>  &LHandPositionsList,
+                                       //std::vector<std::vector<cv::Point>>  &RHandPositionsList,
+                                       std::vector<cv::Mat>                 &featuresMatListOutput){
+                                       //cv::Mat                              &LHFeaturesMatListOutput,
+                                       //cv::Mat                              &RHFeaturesMatListOutput){
 
+    // variables to hold the lists of features that should be passed in "featuresMatListOutput" vector
+    cv::Mat headFeaturesMatList,
+            LHFeaturesMatList,
+            RHFeaturesMatList;
+
+    // get number of data in the lists
     int numOfData = faceCenterPointList.size();
+
     for( int i = 0; i < numOfData; i++){
 
         //std::vector<double> LHFeatures, RHFeatures;
 
-        // Initialize vectors
-        std::vector<double> LHAllConcat, RHAllConcat;
+        // Initialize/reset vectors
         std::vector<std::vector<cv::Point>> positionsToDetect;
-        positionsToDetect.push_back(LHandPositionsList[i]); // left hand always first
-        positionsToDetect.push_back(RHandPositionsList[i]); // right hand always second
+        if(this->bodyPart == "Head"){
+
+            positionsToDetect.push_back(positionsList[0][i] ); // left hand always first
+
+        }
+        else if(this->bodyPart == "Hands"){
+
+            positionsToDetect.push_back(positionsList[0][i]); // left hand always first
+            positionsToDetect.push_back(positionsList[1][i]); // right hand always second
+
+        }
+        else{
+            std::cout << "ERROR!! SemanticDetector::getFeaturedData() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+            return;
+        }
 
         std::vector<std::vector<double>> allConcat;
 
@@ -795,18 +905,53 @@ void SemanticDetector::getFeaturedData(std::vector<cv::Point>               &fac
                       RHFeatures);
                       */
 
-        // transform in Mat variables
-        cv::Mat LHFeaturesMat(allConcat[0],true);
-        cv::Mat RHFeaturesMat(allConcat[1],true);
+        if(this->bodyPart == "Head"){
 
-        // transpose - convert vector into a single row (1xm)
-        LHFeaturesMat = LHFeaturesMat.t();
-        RHFeaturesMat = RHFeaturesMat.t();
+            // transform in Mat variables
+            cv::Mat headFeaturesMat(allConcat[0],true);
 
-        // add to the list
-        LHFeaturesMatListOutput.push_back(LHFeaturesMat);
-        RHFeaturesMatListOutput.push_back(RHFeaturesMat);
+            // transpose - convert vector into a single row (1xm)
+            headFeaturesMat = headFeaturesMat.t();
 
+            // add to the list
+            headFeaturesMatList.push_back(headFeaturesMat);
+
+        }
+        else if(this->bodyPart == "Hands"){
+
+            // transform in Mat variables
+            cv::Mat LHFeaturesMat(allConcat[0],true);
+            cv::Mat RHFeaturesMat(allConcat[1],true);
+
+            // transpose - convert vector into a single row (1xm)
+            LHFeaturesMat = LHFeaturesMat.t();
+            RHFeaturesMat = RHFeaturesMat.t();
+
+            // add to the list
+            LHFeaturesMatList.push_back(LHFeaturesMat);
+            RHFeaturesMatList.push_back(RHFeaturesMat);
+
+        }
+        else{
+            std::cout << "ERROR!! SemanticDetector::getFeaturedData() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+            return;
+        }
+    } // end for loop
+
+    if(this->bodyPart == "Head"){
+
+        featuresMatListOutput.push_back(headFeaturesMatList);
+
+    }
+    else if(this->bodyPart == "Hands"){
+
+        featuresMatListOutput.push_back(LHFeaturesMatList);
+        featuresMatListOutput.push_back(RHFeaturesMatList);
+
+    }
+    else{
+        std::cout << "ERROR!! SemanticDetector::getFeaturedData() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+        return;
     }
 }
 
@@ -912,6 +1057,10 @@ void SemanticDetector::sigmoid(cv::Mat &M, cv::Mat &sigmoidOutput){
 */
 void SemanticDetector::costFunction(cv::Mat &X, cv::Mat y, cv::Mat theta, double lambda, double JOutput){
 
+    // !! -------------------------------   !!
+    // !! BUG: Exception when X is empty.    !!
+    // !! Some check are required!          !!
+    // !! -------------------------------   !!
     double JNorm;
 
     //std::cout << "X \t" << X.rows   << " x " << X.cols << std::endl;
@@ -986,9 +1135,13 @@ void SemanticDetector::splitDataInSets(cv::Mat &setMat,
                                           cv::Mat &data_CV,
                                           cv::Mat &data_test){
 
+    std::cout << "trainPerc = " << trainPerc << "\t cvPerc = " << cvPerc << "\t testPerc = " << testPerc << std::endl;
+
     int numOfVectors = 1000; // (I should pass it, I guess)
     int firstLimit  = numOfVectors * trainPerc,
         secondLimit = firstLimit + numOfVectors * cvPerc;
+    std::cout << "firstLimit = " << firstLimit << "\t secondLimit = " << secondLimit << std::endl;
+
     for( int i = 0; i < numOfVectors; i++ ){
         for(int k = 0; k < setMat.rows; k+=numOfVectors){
 
@@ -1060,17 +1213,155 @@ void SemanticDetector::trainClassifier(InfoClassifier &infoClas){
     std::cout  << "labels_test  => rows: "  << labels_test.rows     << ", cols: " << labels_test.cols << std::endl;
 
     // than train
-    logisticsTrain(data_train, data_CV, data_test, labels_train, labels_CV, labels_test);
+    logisticsTrain(infoClas, data_train, data_CV, data_test, labels_train, labels_CV, labels_test);
 
 }
 
-void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
+void SemanticDetector::getClassifiersTrainDataForHead(InfoClassifier &infoClas,
                                                cv::Mat &data_train_output,
                                                cv::Mat &data_CV_output,
                                                cv::Mat &data_test_output,
                                                cv::Mat &labels_train_output,
                                                cv::Mat &labels_CV_output,
                                                cv::Mat &labels_test_output){
+        // List of data that is gonna hold all data files information
+    std::vector<cv::Point>  faceCenterPointList_positiveData,
+                            faceCenterPointList_negativeData;
+
+    std::vector<double>     pixelSizeInCmTempList_positiveData,
+                            pixelSizeInCmTempList_negativeData;
+
+    std::vector<double>     fpsList_positiveData,
+                            fpsList_negativeData;
+
+    std::vector<int>        gestureLabelList_positiveData,
+                            gestureLabelList_negativeData;
+
+    std::vector<std::vector< std::vector<cv::Point>>> positionsList_positiveData,
+                                                      positionsList_negativeData;
+
+    std::vector< std::vector<cv::Point> >  headPositionsList_positiveData,
+                                           headPositionsList_negativeData;
+
+    //std::vector< std::vector<cv::Point> >  LHandPositionsList_positiveData,
+    //                                       LHandPositionsList_negativeData;
+
+    //std::vector< std::vector<cv::Point> >  RHandPositionsList_positiveData,
+    //                                       RHandPositionsList_negativeData;
+
+    //-----------------------------------------------------------
+    //---------------------Get Data------------------------------
+    std::cout << "Reading positive data..." << std::endl;
+    getDataFromFiles(infoClas.pathPositiveData,
+                    faceCenterPointList_positiveData,
+                    pixelSizeInCmTempList_positiveData,
+                    fpsList_positiveData,
+                    gestureLabelList_positiveData,
+                    positionsList_positiveData);
+                    //LHandPositionsList_positiveData,
+                    //RHandPositionsList_positiveData);
+    headPositionsList_positiveData = positionsList_positiveData[0];
+    std::cout << "\theadPositionsList_positiveData size = " << headPositionsList_positiveData.size() << std::endl;
+    std::cout << "DONE" << std::endl;
+
+    //cv::Mat vals(headPositionsList_positiveData, true);
+    //std::cout << "vals = " << vals << std::endl;
+
+    std::cout << "Reading negative data..." << std::endl;
+    getDataFromFiles(infoClas.pathNegativeData,
+                    faceCenterPointList_negativeData,
+                    pixelSizeInCmTempList_negativeData,
+                    fpsList_negativeData,
+                    gestureLabelList_negativeData,
+                    positionsList_negativeData);
+    headPositionsList_negativeData = positionsList_negativeData[0];
+    std::cout << "\theadPositionsList_negativeData size = " << headPositionsList_negativeData.size() << std::endl;
+    std::cout << "DONE" << std::endl;
+
+    //-----------------------------------------------------------
+    //--------------------------Get Features---------------------
+    std::vector<cv::Mat> featuresMatList_positiveData,
+                         featuresMatList_negativeData;
+
+    // Positive Data Features
+    getFeaturedData(faceCenterPointList_positiveData,
+                   pixelSizeInCmTempList_positiveData,
+                   this->minTimeToDetect,
+                   fpsList_positiveData,
+                   this->interpolationTimeStep,
+                   positionsList_positiveData,
+                   featuresMatList_positiveData);
+
+    // get head positive features lists
+    cv::Mat head_PositiveData_MatList = featuresMatList_positiveData[0];
+    std::cout  << "head_PositiveData_MatList  => rows: "  << head_PositiveData_MatList.rows      << ", cols: " << head_PositiveData_MatList.cols << std::endl;
+
+
+    // Negative Data Features
+    getFeaturedData(faceCenterPointList_negativeData,
+                   pixelSizeInCmTempList_negativeData,
+                   this->minTimeToDetect,
+                   fpsList_positiveData,
+                   this->interpolationTimeStep,
+                   positionsList_negativeData,
+                   featuresMatList_negativeData);
+    // get head negative features lists
+    cv::Mat head_NegativeData_MatList = featuresMatList_negativeData[0];
+    std::cout  << "head_NegativeData_MatList  => rows: "  << head_NegativeData_MatList.rows      << ", cols: " << head_NegativeData_MatList.cols << std::endl;
+
+    //--------------------------------------------------------------------------
+    //-------------------------- Data concatenations ---------------------------
+
+    cv::Mat head_AllTruePos  = head_PositiveData_MatList,
+            head_AllFalsePos = head_NegativeData_MatList;
+
+    std::cout  << "head_AllTruePos   => rows: "  << head_AllTruePos.rows       << ", cols: " << head_AllTruePos.cols << std::endl;
+    std::cout  << "head_AllFalsePos  => rows: "  << head_AllFalsePos.rows      << ", cols: " << head_AllFalsePos.cols << std::endl;
+
+    //--------------------------------------------------------------------------
+    //---------------------- separate data and Label data ----------------------
+    double trainPerc = infoClas.trainingSets.trainPerc,
+           cvPerc    = infoClas.trainingSets.cvPerc,
+           testPerc  = infoClas.trainingSets.testPerc;
+
+    // head_AllFalsePos
+    cv::Mat auxTrain1,      auxCV1,         auxTest1,
+            auxLabelTrain1, auxLabelCV1,    auxLabelTest1;
+    splitDataInSets(head_AllFalsePos, trainPerc, cvPerc, testPerc, auxTrain1, auxCV1, auxTest1);
+
+    createDataLabels(auxTrain1, false, auxLabelTrain1);
+    createDataLabels(auxCV1,    false, auxLabelCV1);
+    createDataLabels(auxTest1,  false, auxLabelTest1);
+
+    // head_AllTruePos
+    cv::Mat auxTrain2,      auxCV2,         auxTest2,
+            auxLabelTrain2, auxLabelCV2,    auxLabelTest2;
+    splitDataInSets(head_AllTruePos, trainPerc, cvPerc, testPerc, auxTrain2, auxCV2, auxTest2);
+
+    createDataLabels(auxTrain2, true, auxLabelTrain2);
+    createDataLabels(auxCV2,    true, auxLabelCV2);
+    createDataLabels(auxTest2,  true, auxLabelTest2);
+
+    // ? Needed ?
+    // merge data and labels in the same way to make sure we have correlated data
+    mergeMats(auxTrain1, auxTrain2, data_train_output);
+    mergeMats(auxCV1,    auxCV2,    data_CV_output);
+    mergeMats(auxTest1,  auxTest2,  data_test_output);
+
+    mergeMats(auxLabelTrain1, auxLabelTrain2, labels_train_output);
+    mergeMats(auxLabelCV1,    auxLabelCV2,    labels_CV_output);
+    mergeMats(auxLabelTest1,  auxLabelTest2,  labels_test_output);
+
+}
+
+void SemanticDetector::getClassifiersTrainDataForHands(InfoClassifier &infoClas,
+                                               cv::Mat &data_train_output,
+                                               cv::Mat &data_CV_output,
+                                               cv::Mat &data_test_output,
+                                               cv::Mat &labels_train_output,
+                                               cv::Mat &labels_CV_output,
+                                               cv::Mat &labels_test_output){
+
     // List of data that is gonna hold all data files information
     std::vector<cv::Point>  faceCenterPointList_positiveData,
                             faceCenterPointList_negativeData;
@@ -1083,6 +1374,11 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
 
     std::vector<int>        gestureLabelList_positiveData,
                             gestureLabelList_negativeData;
+
+    std::vector<std::vector< std::vector<cv::Point>>> positionsList_positiveData,
+                                                      positionsList_negativeData,
+                                                      positionsList_staticGenerated,
+                                                      positionsList_ellipticalGenerated;
 
     std::vector< std::vector<cv::Point> >  LHandPositionsList_positiveData,
                                            LHandPositionsList_negativeData;
@@ -1099,10 +1395,16 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
                     pixelSizeInCmTempList_positiveData,
                     fpsList_positiveData,
                     gestureLabelList_positiveData,
-                    LHandPositionsList_positiveData,
-                    RHandPositionsList_positiveData);
+                    positionsList_positiveData);
+                    //LHandPositionsList_positiveData,
+                    //RHandPositionsList_positiveData);
+    LHandPositionsList_positiveData = positionsList_positiveData[0];
+    RHandPositionsList_positiveData = positionsList_positiveData[1];
     std::cout << "\tLHandPositionsList_positiveData size = " << LHandPositionsList_positiveData.size() << std::endl;
     std::cout << "DONE" << std::endl;
+
+    //cv::Mat vals(LHandPositionsList_positiveData, true);
+    //std::cout << "vals = " << vals << std::endl;
 
     std::cout << "Reading negative data..." << std::endl;
     getDataFromFiles(infoClas.pathNegativeData,
@@ -1110,8 +1412,11 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
                     pixelSizeInCmTempList_negativeData,
                     fpsList_negativeData,
                     gestureLabelList_negativeData,
-                    LHandPositionsList_negativeData,
-                    RHandPositionsList_negativeData);
+                    positionsList_negativeData);
+                    //LHandPositionsList_negativeData,
+                    //RHandPositionsList_negativeData);
+    LHandPositionsList_negativeData = positionsList_negativeData[0];
+    RHandPositionsList_negativeData = positionsList_negativeData[1];
     std::cout << "\tLHandPositionsList_negativeData size = " << LHandPositionsList_negativeData.size() << std::endl;
     std::cout << "DONE" << std::endl;
 
@@ -1151,6 +1456,10 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
                                             staticPositions_Generated);
             }
         }
+        // push vector two time [0],[1]
+        positionsList_staticGenerated.push_back(staticPositions_Generated); // for "left" hand
+        positionsList_staticGenerated.push_back(staticPositions_Generated); // for "right" hand
+
         std::cout << "\tstaticPositions_Generated size = " << staticPositions_Generated.size() << std::endl;
         std::cout << "DONE" << std::endl;
     }
@@ -1221,40 +1530,46 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
 
             }
         }
+        // push vector two time [0],[1]
+        positionsList_ellipticalGenerated.push_back(ellipticalPositionsList_Generated); // for "left" hand
+        positionsList_ellipticalGenerated.push_back(ellipticalPositionsList_Generated); // for "right" hand
+
         std::cout << "\tellipticalPositionsList_Generated size = " << ellipticalPositionsList_Generated.size() << std::endl;
         std::cout << "DONE" << std::endl;
     }
 
     //-----------------------------------------------------------
     //--------------------------Get Features---------------------
+    std::vector<cv::Mat> featuresMatList_positiveData,
+                         featuresMatList_negativeData;
 
     // Positive Data Features
-    cv::Mat LH_PositiveData_MatList, RH_PositiveData_MatList;
     getFeaturedData(faceCenterPointList_positiveData,
                    pixelSizeInCmTempList_positiveData,
                    this->minTimeToDetect,
                    fpsList_positiveData,
                    this->interpolationTimeStep,
-                   LHandPositionsList_positiveData,
-                   RHandPositionsList_positiveData,
-
-                   LH_PositiveData_MatList,
-                   RH_PositiveData_MatList);
+                   positionsList_positiveData,
+                   featuresMatList_positiveData);
+    // get hands positive feature lists
+    cv::Mat LH_PositiveData_MatList = featuresMatList_positiveData[0],
+            RH_PositiveData_MatList = featuresMatList_positiveData[1];
     std::cout  << "LH_PositiveData_MatList  => rows: "  << LH_PositiveData_MatList.rows      << ", cols: " << LH_PositiveData_MatList.cols << std::endl;
+    std::cout  << "RH_PositiveData_MatList  => rows: "  << RH_PositiveData_MatList.rows      << ", cols: " << RH_PositiveData_MatList.cols << std::endl;
 
     // Negative Data Features
-    cv::Mat LH_NegativeData_MatList, RH_NegativeData_MatList;
     getFeaturedData(faceCenterPointList_negativeData,
                    pixelSizeInCmTempList_negativeData,
                    this->minTimeToDetect,
                    fpsList_positiveData,
                    this->interpolationTimeStep,
-                   LHandPositionsList_negativeData,
-                   RHandPositionsList_negativeData,
-
-                   LH_NegativeData_MatList,
-                   RH_NegativeData_MatList);
+                   positionsList_negativeData,
+                   featuresMatList_negativeData);
+    // get hands negative feature lists
+    cv::Mat LH_NegativeData_MatList = featuresMatList_negativeData[0],
+            RH_NegativeData_MatList = featuresMatList_negativeData[1];
     std::cout  << "LH_NegativeData_MatList  => rows: "  << LH_NegativeData_MatList.rows      << ", cols: " << LH_NegativeData_MatList.cols << std::endl;
+    std::cout  << "RH_NegativeData_MatList  => rows: "  << RH_NegativeData_MatList.rows      << ", cols: " << RH_NegativeData_MatList.cols << std::endl;
 
     // Static Data Features
     cv::Mat LH_StaticPosGen_MatList, RH_StaticPosGen_MatList;
@@ -1283,17 +1598,24 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
                               staticPositions_Generated.size(),
                               extended_fpsList_negativeData);
 
+        std::vector<cv::Mat> featuresMatList_staticGeneratedData;
         getFeaturedData(extended_faceCenterPointList_negativeData,
                        extended_pixelSizeInCmTempList_negativeData,
                        this->minTimeToDetect,
                        extended_fpsList_negativeData,
                        this->interpolationTimeStep,
-                       staticPositions_Generated, // LHandPositionsList
-                       staticPositions_Generated, // RHandPositionsList
 
-                       LH_StaticPosGen_MatList,
-                       RH_StaticPosGen_MatList);
-        //std::cout  << "LH_StaticPosGen_MatList   => rows: "  << LH_StaticPosGen_MatList.rows      << ", cols: " << LH_StaticPosGen_MatList.cols << std::endl;
+                       positionsList_staticGenerated,
+                       //staticPositions_Generated, // LHandPositionsList
+                       //staticPositions_Generated, // RHandPositionsList
+                       featuresMatList_staticGeneratedData);
+                       //LH_StaticPosGen_MatList,
+                       //RH_StaticPosGen_MatList);
+
+        LH_StaticPosGen_MatList = featuresMatList_staticGeneratedData[0],
+        RH_StaticPosGen_MatList = featuresMatList_staticGeneratedData[1];
+        std::cout  << "LH_StaticPosGen_MatList   => rows: "  << LH_StaticPosGen_MatList.rows      << ", cols: " << LH_StaticPosGen_MatList.cols << std::endl;
+        std::cout  << "RH_StaticPosGen_MatList   => rows: "  << RH_StaticPosGen_MatList.rows      << ", cols: " << RH_StaticPosGen_MatList.cols << std::endl;
     }
 
     // Elliptical Data Features
@@ -1319,24 +1641,27 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
                               ellipticalPositionsList_Generated.size(),
                               extended_fpsList_OfEllipticalPositions);
 
-
+        std::vector<cv::Mat> featuresMatList_ellipticalData;
         getFeaturedData(extended_faceCenterPointList_OfEllipticalPositions,
                        extended_pixelSizeInCmTempList_OfEllipticalPositions,
                        this->minTimeToDetect,
                        extended_fpsList_OfEllipticalPositions,
                        this->interpolationTimeStep,
-                       ellipticalPositionsList_Generated,  // LHandPositionsList
-                       ellipticalPositionsList_Generated,  // RHandPositionsList
-
-                       LH_EllipticalPosGen_MatList,
-                       RH_EllipticalPosGen_MatList);
-        //std::cout  << "LH_EllipticalPosGen_MatList   => rows: "  << LH_EllipticalPosGen_MatList.rows      << ", cols: " << LH_StaticPosGen_MatList.cols << std::endl;
-
+                       positionsList_ellipticalGenerated,
+                       //ellipticalPositionsList_Generated,  // LHandPositionsList
+                       //ellipticalPositionsList_Generated,  // RHandPositionsList
+                       featuresMatList_ellipticalData);
+                       //LH_EllipticalPosGen_MatList,
+                       //RH_EllipticalPosGen_MatList);
+        LH_EllipticalPosGen_MatList = featuresMatList_ellipticalData[0],
+        RH_EllipticalPosGen_MatList = featuresMatList_ellipticalData[1];
+        std::cout  << "LH_EllipticalPosGen_MatList   => rows: "  << LH_EllipticalPosGen_MatList.rows      << ", cols: " << LH_EllipticalPosGen_MatList.cols << std::endl;
+        std::cout  << "RH_EllipticalPosGen_MatList   => rows: "  << RH_EllipticalPosGen_MatList.rows      << ", cols: " << RH_EllipticalPosGen_MatList.cols << std::endl;
     }
 
     //--------------------------------------------------------------------------
     //-------------------------- Data concatenations ---------------------------
-
+    std::cout << "--- Data concatenations ---" << std::endl;
     cv::Mat LH_AllFalsePos = LH_NegativeData_MatList,
             RH_AllFalsePos = RH_NegativeData_MatList,
             LH_AllTruePos = LH_PositiveData_MatList,
@@ -1346,6 +1671,7 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
     if(infoClas.use_LH_StaticPos_for_negativeData == true){
         cv::vconcat(LH_AllFalsePos, LH_StaticPosGen_MatList, LH_AllFalsePos);
     }
+
     // LH, Negative data and Elliptical Positions
     if(infoClas.use_LH_EllipticalPos_for_negativeData == true){
         cv::vconcat(LH_AllFalsePos, LH_EllipticalPosGen_MatList, LH_AllFalsePos);
@@ -1355,6 +1681,7 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
     if(infoClas.use_RH_StaticPos_for_negativeData == true){
         cv::vconcat(RH_AllFalsePos, RH_StaticPosGen_MatList, RH_AllFalsePos);
     }
+
     // RH, Negative data and Elliptical Positions
     if(infoClas.use_RH_EllipticalPos_for_negativeData == true){
         cv::vconcat(RH_AllFalsePos, RH_EllipticalPosGen_MatList, RH_AllFalsePos);
@@ -1364,6 +1691,7 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
     if(infoClas.use_LH_StaticPos_for_positiveData == true){
         cv::vconcat(LH_AllTruePos, LH_StaticPosGen_MatList, LH_AllTruePos);
     }
+
     // LH and Positive data and Elliptical Positions
     if(infoClas.use_LH_EllipticalPos_for_positiveData == true){
         cv::vconcat(LH_AllTruePos, LH_EllipticalPosGen_MatList, LH_AllTruePos);
@@ -1373,6 +1701,7 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
     if(infoClas.use_RH_StaticPos_for_positiveData == true){
         cv::vconcat(RH_AllTruePos, RH_StaticPosGen_MatList, RH_AllTruePos);
     }
+
     // RH, Positive data and Elliptical Positions
     if(infoClas.use_RH_EllipticalPos_for_positiveData == true){
         cv::vconcat(RH_AllTruePos, RH_EllipticalPosGen_MatList, RH_AllTruePos);
@@ -1419,6 +1748,45 @@ void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
     mergeMats(auxLabelCV1,    auxLabelCV2,    labels_CV_output);
     mergeMats(auxLabelTest1,  auxLabelTest2,  labels_test_output);
 
+
+}
+
+void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,
+                                               cv::Mat &data_train_output,
+                                               cv::Mat &data_CV_output,
+                                               cv::Mat &data_test_output,
+                                               cv::Mat &labels_train_output,
+                                               cv::Mat &labels_CV_output,
+                                               cv::Mat &labels_test_output){
+    // !! we should merge those two functions
+
+    if(this->bodyPart == "Head"){
+        getClassifiersTrainDataForHead(infoClas,
+                                        data_train_output,
+                                        data_CV_output,
+                                        data_test_output,
+                                        labels_train_output,
+                                        labels_CV_output,
+                                        labels_test_output);
+    }
+    else if(this->bodyPart == "Hands"){
+        getClassifiersTrainDataForHands(infoClas,
+                                        data_train_output,
+                                        data_CV_output,
+                                        data_test_output,
+                                        labels_train_output,
+                                        labels_CV_output,
+                                        labels_test_output);
+    }
+    else{
+        std::cout << "ERROR!! SemanticDetector::getClassifiersTrainData() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
+        return;
+    }
+
+
+
+
+
 }
 
 void SemanticDetector::mergeMats(cv::Mat &mat1, cv::Mat &mat2, cv::Mat &matOutput){
@@ -1453,18 +1821,19 @@ void SemanticDetector::mergeMats(cv::Mat &mat1, cv::Mat &mat2, cv::Mat &matOutpu
 * ANOTHER SOURCE
 * https://stackoverflow.com/questions/37282275/logistic-regression-on-mnist-dataset
 */
-void SemanticDetector::logisticsTrain(cv::Mat &data_train,
+void SemanticDetector::logisticsTrain(InfoClassifier &infoClas,
+                                      cv::Mat &data_train,
                                       cv::Mat &data_CV,
                                       cv::Mat &data_test,
                                       cv::Mat &labels_train,
                                       cv::Mat &labels_CV,
                                       cv::Mat &labels_test){
 
-    double learningRate = 0.03;
+    double learningRate = 10000.0;
     int iterations,
         miniBatchSize = 1;
 
-    std::vector<int> iterationsArray = {72000};
+    std::vector<int> iterationsArray = {10, 500};
     std::cout << "learningRate  = " << learningRate << std::endl;
 
     for(int i = 0; i < iterationsArray.size(); i++){
@@ -1496,7 +1865,7 @@ void SemanticDetector::logisticsTrain(cv::Mat &data_train,
         std::cout << "done!" << std::endl;
 
         // save the classifier
-        const char saveFilename[] = "LHClassifier.xml";
+        const char saveFilename[] = "headShakeClassifier.xml";
         std::cout << "saving the classifier to " << saveFilename << std::endl;
         lr1->save(saveFilename);
 
@@ -1563,14 +1932,13 @@ void SemanticDetector::detect(const char classifierName[],
     }
     */
 
-    //std::cout << " --- SemanticDetector::Detect() -> bodyPart: " << this->bodyPart << " ---" << std::endl;
 
     cv::Mat allInfo;
     double periodFPS = 1.0 / ((double)this->fps); // period of FPS = 1/fps
 
     if(this->bodyPart == "Head"){
 
-        //Take left and right hand positions
+        //Take head positions
         std::vector<cv::Point> headPositions = positions[0];
 
         // check if we have a minimum time for being analyzed (It depends on the fps and history size of the class)
@@ -1672,16 +2040,14 @@ void SemanticDetector::detect(const char classifierName[],
         return;
     }
 
-// this section will be used to predict gestures with classifiers already created
-//#ifndef TRAINING
+    // this section will be used to predict gestures with classifiers already created
 
     // load classifier
-    //const char saveFilename[] = "LHClassifier.xml";
     cv::Ptr<cv::ml::LogisticRegression> lr2 = cv::ml::StatModel::load<cv::ml::LogisticRegression>(classifierName);
 
     // predict response (By Opencv)
-    cv::Mat responses;
-    lr2->predict(allInfo, responses);
+    //cv::Mat responses;
+    //lr2->predict(allInfo, responses);
 
     // predict response (By me - no binary)
     cv::Mat thetas = lr2->get_learnt_thetas();
@@ -1689,10 +2055,7 @@ void SemanticDetector::detect(const char classifierName[],
     cv::hconcat(X_bias, allInfo, X_bias);
     cv::Mat calc = X_bias * thetas.t();
     cv::Mat h;
-    sigmoid(calc, h);
-
-    // compare responses
-    //std::cout << "response : " << responses << " h : " << h << std::endl;
+    sigmoid(calc, h); // h has the prediction value
 
     // add responses to the filter according with certain level of trust
     float h_float = h.at<float>(0,0);
@@ -1711,7 +2074,7 @@ void SemanticDetector::detect(const char classifierName[],
         flag_LHShake = false;   // turn the flat to false
         gestureOutput = 100.0;
     }
-    //std::cout << " \tflag_LHShake = " << flag_LHShake << std::endl;
+    std::cout << "h = " << h << " \tflag_LHShake = " << flag_LHShake << std::endl;
 
     // actualize rowNum
     rowNum++;
@@ -1719,100 +2082,5 @@ void SemanticDetector::detect(const char classifierName[],
         rowNum = 0;
     }
 
-//#else // this section will be used to train and create classifiers
-
-    //#ifdef TRAINING_SAVE_DATA
-        /*
-         *  This part will analyze the videos, take data from specific timestamps,
-         *  generate more data and save all in files.
-        */
-/*
-        std::cout << "================================" << std::endl;
-        std::cout << "|  TRAINING_SAVE_DATA defined! |" << std::endl;
-        std::cout << "================================" << std::endl;
-
-        if(this->bodyPart == "head"){
-            std::string fileName, fullPath;
-            int gestureLabel;
-
-            // If frame is the last one of the gesture
-            if(frameIndex == videosInfo.find(capVideoName)->second){
-                std::cout << "Taking data from " << capVideoName << " at frame " << frameIndex << std::endl;
-
-                // save history into a file
-                fileName = capVideoName;
-                fullPath = pathOriginalData + fileName + ".yml"; // !! We should pass "pathOriginalData"  as a parameter
-                gestureLabel = 4; // (REALLY BAD IMPLEMENTATION FOR NOW!!)
-                                  //    1 - "RHShake"
-                                  //    2 - "LHShake"
-                                  //    3 - "StaticHandsUp"
-                                  //    4 - "Head nod"
-                                  //    5 - "Head shake"
-
-                saveDataInFile(fullPath,
-                               capVideoName,
-                               gestureLabel,
-                               pixelSizeInCmTemp,
-                               faceCenterPoint,
-                               LHandPositions,
-                               RHandPositions);
-
-                // generate data with some deviations of the original one
-                //generateDataFromOriginal(pathCreatedData,
-                //                         capVideoName,
-                //                         gestureLabel,
-                //                         pixelSizeInCmTemp,
-                //                         faceCenterPoint,
-                //                         LHandPositions,
-                //                         RHandPositions);
-            }
-        }
-        else if (this->bodyPart == "hands"){
-
-            std::string fileName, fullPath;
-            int gestureLabel;
-
-            // If frame is the last one of the gesture
-            if(frameIndex == videosInfo.find(capVideoName)->second){
-                std::cout << "Taking data from " << capVideoName << " at frame " << frameIndex << std::endl;
-
-                // save history into a file
-                fileName = capVideoName;
-                fullPath = pathOriginalData + fileName + ".yml";
-                gestureLabel = 3; // (REALLY BAD IMPLEMENTATION FOR NOW!!)
-                                  //    1 - "RHShake"
-                                  //    2 - "LHShake"
-                                  //    3 - "StaticHandsUp"
-                saveDataInFile(fullPath,
-                               capVideoName,
-                               gestureLabel,
-                               pixelSizeInCmTemp,
-                               faceCenterPoint,
-                               LHandPositions,
-                               RHandPositions);
-
-                // generate data with some deviations of the original one
-                generateDataFromOriginal(pathCreatedData,
-                                         capVideoName,
-                                         gestureLabel,
-                                         pixelSizeInCmTemp,
-                                         faceCenterPoint,
-                                         LHandPositions,
-                                         RHandPositions);
-            }
-
-        }
-        else {
-            std::cout << "ERROR!! SemanticDetector::Detect() -> bodyPart " << this->bodyPart << " unknow!" << std::endl;
-            return;
-        }
-    */
-
-    //#endif // TRAINING_SAVE_DATA
-
-//#endif
-
 }
-
-
 

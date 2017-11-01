@@ -163,7 +163,8 @@ public:
 
     void sigmoid(cv::Mat &M, cv::Mat &sigmoidOutput);
     void costFunction(cv::Mat &X, cv::Mat y, cv::Mat theta, double lambda, double JOutput);
-    void logisticsTrain(cv::Mat &data_train,
+    void logisticsTrain(InfoClassifier &infoClas,
+                        cv::Mat &data_train,
                         cv::Mat &data_CV,
                         cv::Mat &data_test,
                         cv::Mat &labels_train,
@@ -177,7 +178,7 @@ public:
                         std::vector<std::vector<cv::Point>> &positions,
                         double pixelSizeInCmTemp,
                         int frameIndex);
-
+    //void getInfoClassifier(std::string bodyPart, InfoClassifier &infoClas_output);
 private:
 
     float trust = 0.5; // classifier threshold
@@ -221,15 +222,30 @@ private:
                                  cv::Mat &labels_CV_output,
                                  cv::Mat &labels_test_output);
 
-    void getFeaturedData(std::vector<cv::Point>             &faceCenterPointList,
-                       std::vector<double>                  &pixelSizeInCmTempList,
-                       double                               minTimeToDetect,
-                       std::vector<double>                  &fpsList,
-                       double                               interpolationTimeStep,
-                       std::vector<std::vector<cv::Point>>  &LHandPositionsList,
-                       std::vector<std::vector<cv::Point>>  &RHandPositionsList,
-                       cv::Mat                              &LHFeaturesMatListOutput,
-                       cv::Mat                              &RHFeaturesMatListOutput);
+    void getClassifiersTrainDataForHead(InfoClassifier &infoClas,
+                                 cv::Mat &data_train_output,
+                                 cv::Mat &data_CV_output,
+                                 cv::Mat &data_test_output,
+                                 cv::Mat &labels_train_output,
+                                 cv::Mat &labels_CV_output,
+                                 cv::Mat &labels_test_output);
+
+    void getClassifiersTrainDataForHands(InfoClassifier &infoClas,
+                                 cv::Mat &data_train_output,
+                                 cv::Mat &data_CV_output,
+                                 cv::Mat &data_test_output,
+                                 cv::Mat &labels_train_output,
+                                 cv::Mat &labels_CV_output,
+                                 cv::Mat &labels_test_output);
+
+
+    void getFeaturedData(std::vector<cv::Point>                             &faceCenterPointList,
+                       std::vector<double>                                  &pixelSizeInCmTempList,
+                       double                                               minTimeToDetect,
+                       std::vector<double>                                  &fpsList,
+                       double                                               interpolationTimeStep,
+                       std::vector<std::vector<std::vector<cv::Point>>>     positionsList,
+                       std::vector<cv::Mat>                                 &featuresMatListOutput);
 
     /*
     void getFeaturesVector(cv::Point &faceCenterPoint,
@@ -310,8 +326,9 @@ private:
                         std::vector<double>     &fpsListOutput,
                         //std::vector<double>     &interpolationTimeStepListOutput,
                         std::vector<int>        &gestureLabelListOutput,
-                        std::vector< std::vector<cv::Point> > &LHandPositionsListOutput,
-                        std::vector< std::vector<cv::Point> > &RHandPositionsListOutput);
+                        std::vector<std::vector< std::vector<cv::Point>>> &positionsListOutput);
+                        //std::vector< std::vector<cv::Point> > &LHandPositionsListOutput,
+                        //std::vector< std::vector<cv::Point> > &RHandPositionsListOutput);
 
 
 };

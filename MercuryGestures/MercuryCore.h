@@ -18,7 +18,7 @@
 #include <array>
 
 #define DEBUG
-#define TRAINING
+//#define TRAINING
 //#define TRAINING_SAVE_DATA
 //#define TRAINING_CREATE_NEW_CLASSIFIER
 

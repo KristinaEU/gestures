@@ -756,15 +756,44 @@ int run(cv::VideoCapture& cap, int fps) {
                 // predictions
 
                 #ifndef TRAINING
+                    /*
+                    "LHClassifier.xml"
+                    "RHClassifier.xml"
+
+                    "headShakeClassifier.xml"
+                    "headNodClassifier.xml"
+                    */
+
+                    //for(int i = 0; i < numClassifiers; i++){
+
+                    //}
+
                     // detect hands semantic gestures
                     float handsCodeGesture = 0.0;
                     const char LHClassifier[] = "LHClassifier.xml";
-                    handsSemanticDetector.detect(LHClassifier, faceCenterPoint, pixelSizeInCmTemp, handPositions, handsCodeGesture, frameIndex); // indexFrame can be not used for normal running
+                    //handsSemanticDetector.detect(LHClassifier, faceCenterPoint, pixelSizeInCmTemp, handPositions, handsCodeGesture, frameIndex); // indexFrame can be not used for normal running
+
+
+
+
+                    const char headShakeClassifier[] = "headShakeClassifier.xml";
+                    const char headNodClassifier[] = "headNodClassifier.xml";
+
+                    float headShakeVal = 0.0,
+                          headNodVal = 0.0;
+
+                    headSemanticDetector.detect(headShakeClassifier, faceCenterPoint, pixelSizeInCmTemp, headPositions, headShakeVal, frameIndex);
+                    //headSemanticDetector.detect(headNodClassifier, faceCenterPoint, pixelSizeInCmTemp, headPositions, headNodVal, frameIndex);
 
                     // detect head semantic gestures
-                    float headCodeGesture = 0.0;
-                    const char headClassifier[] = "headClassifier.xml";
-                    //headSemanticDetector.detect(headClassifier, faceCenterPoint, pixelSizeInCmTemp, headPositions, headCodeGesture, frameIndex);
+                    //float headCodeGesture = 0.0;
+                    // max()
+
+                    //if(headShakeVal > headShakeVal){
+                    //    headCodeGesture = gestureLablesList.find("headShake")->second;
+                    //}
+
+
                 #else
                     //std::cout << "================================" << std::endl;
                     //std::cout << "|  TRAINING defined!           |" << std::endl;
@@ -960,14 +989,14 @@ void manage(int movieIndex) {
     videoList.push_back("StaticHandsUp04.mp4");
     */
 
-    /*
+
     //Head Shake
     int numOfHeadShakeVideos = 50;
     for(int i = 0; i < numOfHeadShakeVideos; i++){
         std::string videoName = "headShake" + std::to_string(i) + ".mp4";
         videoList.push_back(videoName);
     }
-    */
+
     /*
     //Head Nod
     int numOfHeadNodVideos = 50;
@@ -1053,9 +1082,21 @@ void manage(int movieIndex) {
 
 
 
+    //Head Shake
+    int numOfHeadShakeVideos = 50;
+    for(int i = 0; i < numOfHeadShakeVideos; i++){
+        std::string videoName = "headShake" + std::to_string(i) + ".mp4";
+        videoList.push_back(videoName);
+    }
 
-
-
+    /*
+    //Head Nod
+    int numOfHeadNodVideos = 50;
+    for(int i = 0; i < numOfHeadNodVideos; i++){
+        std::string videoName = "headNod" + std::to_string(i) + ".mp4";
+        videoList.push_back(videoName);
+    }
+    */
 
 #endif // TRAINING
 
@@ -1111,6 +1152,89 @@ void manage(int movieIndex) {
     manage(newIndex);
 }
 
+
+void getInfoClas(std::string bodyPart, InfoClassifier &infoClas_output){
+
+    if(bodyPart == "Head"){
+
+        infoClas_output.pathPositiveData   = "data/SelectedData/headShake/createdData/";    // for positive gestures
+        infoClas_output.pathNegativeData   = "data/negativeData/";                          // for negative gestures
+
+
+        infoClas_output.trainingSets.trainPerc         = 0.79;
+        infoClas_output.trainingSets.cvPerc            = 0.02;
+        infoClas_output.trainingSets.testPerc          = 0.19;
+
+        //infoClas_output.learningRate
+        //infoClas_output.saveFilename
+    }
+    else if(bodyPart == "Hands"){
+
+        infoClas_output.pathPositiveData   = "data/SelectedData/LHShake/createdData/";         // for positive gestures
+        infoClas_output.pathNegativeData   = "data/SelectedData/StaticHandsUp/createdData/";   // for negative gestures
+        infoClas_output.pathClassifier     = "classifier/headShakeClassifier.xml";                               // classifier path
+
+        infoClas_output.XmaxWindow         = 500;
+        infoClas_output.YmaxWindow         = 300;
+
+        infoClas_output.generateStaticPositions        = true;
+        infoClas_output.genStaticPosInfo.numOfVectors      = 1000;
+        infoClas_output.genStaticPosInfo.x_start = 60;
+        infoClas_output.genStaticPosInfo.x_step  = 60;
+        infoClas_output.genStaticPosInfo.x_end   = infoClas_output.XmaxWindow;
+        infoClas_output.genStaticPosInfo.y_start = 50;
+        infoClas_output.genStaticPosInfo.y_step  = 50;
+        infoClas_output.genStaticPosInfo.y_end   = infoClas_output.YmaxWindow;
+
+
+        infoClas_output.generateEllipticalPositions    = true;
+        infoClas_output.genEllipticalPosInfo.numOfVectors  = 1000;
+        infoClas_output.genEllipticalPosInfo.c1_start  = 150;
+        infoClas_output.genEllipticalPosInfo.c1_step   = 62;
+        infoClas_output.genEllipticalPosInfo.c1_end    = (0.75 * infoClas_output.XmaxWindow);
+
+        infoClas_output.genEllipticalPosInfo.c2_start  = 75;
+        infoClas_output.genEllipticalPosInfo.c2_step   = 75;
+        infoClas_output.genEllipticalPosInfo.c2_end    = infoClas_output.YmaxWindow;
+
+        infoClas_output.genEllipticalPosInfo.a_start   = 20.0;
+        infoClas_output.genEllipticalPosInfo.a_step    = 10.0;
+        infoClas_output.genEllipticalPosInfo.a_end     = 30.0;
+
+        infoClas_output.genEllipticalPosInfo.b_start   = 20.0;
+        infoClas_output.genEllipticalPosInfo.b_step    = 10.0;
+        infoClas_output.genEllipticalPosInfo.b_end     = 30.0;
+
+        infoClas_output.genEllipticalPosInfo.f_start   = 0.5;
+        infoClas_output.genEllipticalPosInfo.f_step    = 0.5;
+        infoClas_output.genEllipticalPosInfo.f_end     = 2.0;
+
+
+        infoClas_output.trainingSets.trainPerc         = 0.6;
+        infoClas_output.trainingSets.cvPerc            = 0.2;
+        infoClas_output.trainingSets.testPerc          = 0.2;
+
+        //use_LH = true;
+        //use_RH = false;
+
+        infoClas_output.use_LH_StaticPos_for_negativeData     = true;
+        infoClas_output.use_LH_EllipticalPos_for_negativeData = true;
+        infoClas_output.use_RH_StaticPos_for_negativeData     = false;
+        infoClas_output.use_RH_EllipticalPos_for_negativeData = false;
+
+        infoClas_output.use_LH_StaticPos_for_positiveData     = false;
+        infoClas_output.use_LH_EllipticalPos_for_positiveData = false;
+        infoClas_output.use_RH_StaticPos_for_positiveData     = false;
+        infoClas_output.use_RH_EllipticalPos_for_positiveData = false;
+
+    }
+    else{
+        std::cout << "ERROR!! getInfoClas -> bodyPart " << bodyPart << " unknow!" << std::endl;
+        return;
+    }
+}
+
+
 int main(int argc, char *argv[]) {
 
     int numberOfVideos;
@@ -1118,87 +1242,33 @@ int main(int argc, char *argv[]) {
 #ifdef TRAINING
     std::cout << "|--- I'm in training mode! ---|" << std::endl;
 
+    std::string hands_Str = "Hands";
+    std::string head_Str  = "Head";
+
     int fps = 29; // just for now
-    SemanticDetector handsSemanticDetector(fps, "Hands");
-    //SemanticDetector headSemanticDetector(fps, "Head");
+    SemanticDetector handsSemanticDetector(fps, hands_Str);
+    SemanticDetector headSemanticDetector(fps, head_Str);
 
 
     // TRAINING_SAVE_DATA
     // handsSemanticDetector.storeVideoData(pathVideos, pathData, goalPoints);
 
-    /*
-    // TRAINING_CREATE_NEW_CLASSIFIER
-    InfoClassifier infoClas;
-    infoClas.pathPositiveData   = "data/SelectedData/LHShake/createdData/";         // for positive gestures
-    infoClas.pathNegativeData   = "data/SelectedData/StaticHandsUp/createdData/";   // for negative gestures
-    infoClas.pathClassifier     = "LHClassifier.xml";                               // classifier path
+    InfoClassifier infoClasHands;
+    InfoClassifier infoClasHead;
 
-    infoClas.XmaxWindow         = 500;
-    infoClas.YmaxWindow         = 300;
+    getInfoClas(head_Str, infoClasHead);
+    getInfoClas(hands_Str, infoClasHands);
 
-    infoClas.generateStaticPositions        = true;
-    infoClas.genStaticPosInfo.numOfVectors      = 1000;
-    infoClas.genStaticPosInfo.x_start = 60;
-    infoClas.genStaticPosInfo.x_step  = 60;
-    infoClas.genStaticPosInfo.x_end   = infoClas.XmaxWindow;
-    infoClas.genStaticPosInfo.y_start = 50;
-    infoClas.genStaticPosInfo.y_step  = 50;
-    infoClas.genStaticPosInfo.y_end   = infoClas.YmaxWindow;
-
-
-    infoClas.generateEllipticalPositions    = true;
-    infoClas.genEllipticalPosInfo.numOfVectors  = 1000;
-    infoClas.genEllipticalPosInfo.c1_start  = 150;
-    infoClas.genEllipticalPosInfo.c1_step   = 62;
-    infoClas.genEllipticalPosInfo.c1_end    = (0.75 * infoClas.XmaxWindow);
-
-    infoClas.genEllipticalPosInfo.c2_start  = 75;
-    infoClas.genEllipticalPosInfo.c2_step   = 75;
-    infoClas.genEllipticalPosInfo.c2_end    = infoClas.YmaxWindow;
-
-    infoClas.genEllipticalPosInfo.a_start   = 20.0;
-    infoClas.genEllipticalPosInfo.a_step    = 10.0;
-    infoClas.genEllipticalPosInfo.a_end     = 30.0;
-
-    infoClas.genEllipticalPosInfo.b_start   = 20.0;
-    infoClas.genEllipticalPosInfo.b_step    = 10.0;
-    infoClas.genEllipticalPosInfo.b_end     = 30.0;
-
-    infoClas.genEllipticalPosInfo.f_start   = 0.5;
-    infoClas.genEllipticalPosInfo.f_step    = 0.5;
-    infoClas.genEllipticalPosInfo.f_end     = 2.0;
-
-    infoClas.trainingSets.trainPerc         = 0.6;
-    infoClas.trainingSets.cvPerc            = 0.2;
-    infoClas.trainingSets.testPerc          = 0.2;
-
-
-    //use_LH = true;
-    //use_RH = false;
-
-
-    infoClas.use_LH_StaticPos_for_negativeData     = true;
-    infoClas.use_LH_EllipticalPos_for_negativeData = true;
-    infoClas.use_RH_StaticPos_for_negativeData     = false;
-    infoClas.use_RH_EllipticalPos_for_negativeData = false;
-
-    infoClas.use_LH_StaticPos_for_positiveData     = false;
-    infoClas.use_LH_EllipticalPos_for_positiveData = false;
-    infoClas.use_RH_StaticPos_for_positiveData     = false;
-    infoClas.use_RH_EllipticalPos_for_positiveData = false;
-    */
-
-    //handsSemanticDetector.trainClassifier(infoClas);
-    //headSemanticDetector.trainClassifier(infoClas);
-
+    headSemanticDetector.trainClassifier(infoClasHead);
+    //handsSemanticDetector.trainClassifier(infoClasHands);
 
     // detect semantic gestures
     // handsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // frameIndex can be not used for normal running
 
-    //numberOfVideos = 10;
+    //numberOfVideos = 50;
     //manage(numberOfVideos - 1);
 #else
-    numberOfVideos = 22;
+    numberOfVideos = 50;//22;
     manage(numberOfVideos - 1);
 #endif
 

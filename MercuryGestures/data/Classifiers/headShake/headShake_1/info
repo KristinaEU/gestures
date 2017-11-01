@@ -1,0 +1,53 @@
+//----------------------------------------------
+    BUG!! centerPoint of the face was not correct!
+    Classified Discarted!!
+//----------------------------------------------
+
+|--- I'm in training mode! ---|
+Reading positive data...
+	headPositionsList_positiveData size = 50000
+DONE
+Reading negative data...
+	headPositionsList_negativeData size = 90000
+DONE
+head_PositiveData_MatList  => rows: 50000, cols: 598
+head_NegativeData_MatList  => rows: 90000, cols: 598
+head_AllTruePos   => rows: 50000, cols: 598
+head_AllFalsePos  => rows: 90000, cols: 598
+data_train   => rows: 84000, cols: 598
+labels_train => rows: 84000, cols: 1
+data_CV      => rows: 28000, cols: 598
+labels_CV    => rows: 28000, cols: 1
+data_test    => rows: 28000, cols: 598
+labels_test  => rows: 28000, cols: 1
+learningRate  = 10000
+/-----------------------------------------/
+iterations    = 61000
+setting training parameters...
+training...
+	elapsed time: 55740s
+done!
+saving the classifier to headShakeClassifier.xml
+Accuracy: 99.8607%
+Precision: 0.997403
+Recall: 0.9987
+F1Score: 0.998051
+data_train: 
+a1 = [491.58429]
+a2 = [-nan]
+J1 = [-nan]
+J2 = [21738642]
+	J = [-nan]
+data_CV: 
+a1 = [168.03574]
+a2 = [-nan]
+J1 = [-nan]
+J2 = [7246214]
+	J = [-nan]
+data_test: 
+a1 = [156.47957]
+a2 = [-nan]
+J1 = [-nan]
+J2 = [7246214]
+	J = [-nan]
+

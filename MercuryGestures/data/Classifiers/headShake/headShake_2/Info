@@ -1,0 +1,86 @@
+abs positions for x and y axes
+
+__________________________________________
+
+
+|--- I'm in training mode! ---|
+Reading positive data...
+	headPositionsList_positiveData size = 50000
+DONE
+Reading negative data...
+	headPositionsList_negativeData size = 90000
+DONE
+head_PositiveData_MatList  => rows: 50000, cols: 598
+head_NegativeData_MatList  => rows: 90000, cols: 598
+head_AllTruePos   => rows: 50000, cols: 598
+head_AllFalsePos  => rows: 90000, cols: 598
+trainPerc = 0.79	 cvPerc = 0.02	 testPerc = 0.19
+firstLimit = 790	 secondLimit = 810
+trainPerc = 0.79	 cvPerc = 0.02	 testPerc = 0.19
+firstLimit = 790	 secondLimit = 810
+data_train   => rows: 110600, cols: 598
+labels_train => rows: 110600, cols: 1
+data_CV      => rows: 2800, cols: 598
+labels_CV    => rows: 2800, cols: 1
+data_test    => rows: 26600, cols: 598
+labels_test  => rows: 26600, cols: 1
+learningRate  = 10000
+/-----------------------------------------/
+iterations    = 10
+setting training parameters...
+training...
+	elapsed time: 12.9997s
+done!
+saving the classifier to headShakeClassifier.xml
+Accuracy: 73.3872%
+Precision: 1
+Recall: 0.254842
+F1Score: 0.406174
+data_train: 
+a1 = [27868.926]
+a2 = [-45268.48]
+J1 = [0.66127855]
+J2 = [801.16443]
+	J = [801.82568]
+data_CV: 
+a1 = [705.73267]
+a2 = [-1146.2147]
+J1 = [0.6614098]
+J2 = [20.282644]
+	J = [20.944054]
+data_test: 
+a1 = [6698.9214]
+a2 = [-10887.537]
+J1 = [0.66114503]
+J2 = [192.68512]
+	J = [193.34627]
+/-----------------------------------------/
+iterations    = 500
+setting training parameters...
+training...
+	elapsed time: 435.427s
+done!
+saving the classifier to headShakeClassifier.xml
+Accuracy: 95.9511%
+Precision: 0.997167
+Recall: 0.889158
+F1Score: 0.94007
+data_train: 
+a1 = [12685.912]
+a2 = [-14048.281]
+J1 = [0.24171965]
+J2 = [694347.81]
+	J = [694348.06]
+data_CV: 
+a1 = [324.77219]
+a2 = [-359.27234]
+J1 = [0.24430162]
+J2 = [17578.426]
+	J = [17578.67]
+data_test: 
+a1 = [2997.6599]
+a2 = [-3375.2102]
+J1 = [0.23958158]
+J2 = [166995.05]
+	J = [166995.28]
+
