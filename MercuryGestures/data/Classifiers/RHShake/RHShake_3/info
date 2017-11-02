@@ -1,10 +1,4 @@
-BUG FOUND!
-Classifier rejected!!
-
-_________________________________________
-
 |--- I'm in training mode! ---|
-WARNING: hands not defined in semantic detector constructor!!
 Reading positive data...
 	LHandPositionsList_positiveData size = 25000
 DONE
@@ -55,47 +49,47 @@ trainPerc = 0.79	 cvPerc = 0.02	 testPerc = 0.19
 firstLimit = 790	 secondLimit = 810
 trainPerc = 0.79	 cvPerc = 0.02	 testPerc = 0.19
 firstLimit = 790	 secondLimit = 810
-data_train   => rows: 23700, cols: 2549
-labels_train => rows: 23700, cols: 1
-data_CV      => rows: 600, cols: 2549
-labels_CV    => rows: 600, cols: 1
-data_test    => rows: 5700, cols: 2549
-labels_test  => rows: 5700, cols: 1
+data_train   => rows: 64780, cols: 2549
+labels_train => rows: 64780, cols: 1
+data_CV      => rows: 1640, cols: 2549
+labels_CV    => rows: 1640, cols: 1
+data_test    => rows: 15580, cols: 2549
+labels_test  => rows: 15580, cols: 1
 learningRate  = 10000
 /-----------------------------------------/
 iterations    = 10
 setting training parameters...
 training...
-	elapsed time: 10.129s
+	elapsed time: 28.3041s
 done!
 saving the classifier to RHClassifier.xml
-Accuracy: 96.8772%
-Precision: 0.96388
+Accuracy: 96.0591%
+Precision: 0.885533
 Recall: 1
-F1Score: 0.981608
+F1Score: 0.939292
 data_train: 
-a1 = [1467.8226]
-a2 = [-1146.2012]
-J1 = [0.11029636]
-J2 = [18595.963]
-	J = [18596.072]
+a1 = [5051.4106]
+a2 = [-15199.075]
+J1 = [0.31260398]
+J2 = [15638.46]
+	J = [15638.772]
 data_CV: 
-a1 = [38.237164]
-a2 = [-28.901001]
-J1 = [0.11189694]
-J2 = [470.78387]
-	J = [470.89578]
+a1 = [126.61981]
+a2 = [-384.63983]
+J1 = [0.31174368]
+J2 = [395.91037]
+	J = [396.22211]
 data_test: 
-a1 = [345.9841]
-a2 = [-266.24594]
-J1 = [0.10740878]
-J2 = [4472.4468]
-	J = [4472.5542]
+a1 = [1202.4738]
+a2 = [-3651.0632]
+J1 = [0.31152356]
+J2 = [3761.1484]
+	J = [3761.46]
 /-----------------------------------------/
 iterations    = 100
 setting training parameters...
 training...
-	elapsed time: 59.6669s
+	elapsed time: 174.728s
 done!
 saving the classifier to RHClassifier.xml
 Accuracy: 100%
@@ -103,21 +97,21 @@ Precision: 1
 Recall: 1
 F1Score: 1
 data_train: 
-a1 = [362.35559]
-a2 = [-428.27756]
-J1 = [0.033360049]
-J2 = [87610.219]
-	J = [87610.25]
+a1 = [1245.5347]
+a2 = [-3608.2087]
+J1 = [0.07492657]
+J2 = [137962.92]
+	J = [137963]
 data_CV: 
-a1 = [9.3371181]
-a2 = [-10.714298]
-J1 = [0.033419028]
-J2 = [2217.9802]
-	J = [2218.0137]
+a1 = [31.035978]
+a2 = [-91.243706]
+J1 = [0.074560784]
+J2 = [3492.7324]
+	J = [3492.8069]
 data_test: 
-a1 = [84.573875]
-a2 = [-95.668068]
-J1 = [0.031621393]
-J2 = [21070.812]
-	J = [21070.844]
+a1 = [291.94598]
+a2 = [-865.96167]
+J1 = [0.07432013]
+J2 = [33180.957]
+	J = [33181.031]
 

@@ -913,12 +913,6 @@ void SemanticDetector::getFeaturedData(std::vector<cv::Point>               &fac
                       interpolationTimeStep,
                       positionsToDetect,
                       allConcat);
-                      /*
-                      LHandPositionsList[i],
-                      RHandPositionsList[i],
-                      LHFeatures,
-                      RHFeatures);
-                      */
 
         if(this->bodyPart == "Head"){
 
@@ -1735,19 +1729,37 @@ void SemanticDetector::getClassifiersTrainDataForHands(InfoClassifier &infoClas,
            cvPerc    = infoClas.trainingSets.cvPerc,
            testPerc  = infoClas.trainingSets.testPerc;
 
-    // LH_AllFalsePos
     cv::Mat auxTrain1,      auxCV1,         auxTest1,
             auxLabelTrain1, auxLabelCV1,    auxLabelTest1;
-    splitDataInSets(LH_AllFalsePos, trainPerc, cvPerc, testPerc, auxTrain1, auxCV1, auxTest1);
+    cv::Mat auxTrain2,      auxCV2,         auxTest2,
+            auxLabelTrain2, auxLabelCV2,    auxLabelTest2;
+
+    cv::Mat set_AllFalsePos,
+            set_AllTruePos;
+    if(this->hands == "leftHand"){
+        set_AllFalsePos = LH_AllFalsePos;
+        set_AllTruePos  = LH_AllTruePos;
+    }
+    else if(this->hands == "rightHand"){
+        set_AllFalsePos = RH_AllFalsePos;
+        set_AllTruePos  = RH_AllTruePos;
+    }
+    else if(this->hands == "bothHands"){
+        // concat ??
+    }
+    else{
+        //ERROR
+    }
+
+    // LH_AllFalsePos
+    splitDataInSets(set_AllFalsePos, trainPerc, cvPerc, testPerc, auxTrain1, auxCV1, auxTest1);
 
     createDataLabels(auxTrain1, false, auxLabelTrain1);
     createDataLabels(auxCV1,    false, auxLabelCV1);
     createDataLabels(auxTest1,  false, auxLabelTest1);
 
     // LH_PositiveData_MatList
-    cv::Mat auxTrain2,      auxCV2,         auxTest2,
-            auxLabelTrain2, auxLabelCV2,    auxLabelTest2;
-    splitDataInSets(LH_AllTruePos, trainPerc, cvPerc, testPerc, auxTrain2, auxCV2, auxTest2);
+    splitDataInSets(set_AllTruePos, trainPerc, cvPerc, testPerc, auxTrain2, auxCV2, auxTest2);
 
     createDataLabels(auxTrain2, true, auxLabelTrain2);
     createDataLabels(auxCV2,    true, auxLabelCV2);
@@ -1763,7 +1775,44 @@ void SemanticDetector::getClassifiersTrainDataForHands(InfoClassifier &infoClas,
     mergeMats(auxLabelCV1,    auxLabelCV2,    labels_CV_output);
     mergeMats(auxLabelTest1,  auxLabelTest2,  labels_test_output);
 
+    /*
+    labels_train_output
+    labels_CV_output
+    data_test_output
+    */
+    /*
+    // LH_AllFalsePos
+    cv::Mat auxTrain1,      auxCV1,         auxTest1,
+            auxLabelTrain1, auxLabelCV1,    auxLabelTest1;
+    splitDataInSets(LH_AllFalsePos, trainPerc, cvPerc, testPerc, auxTrain1, auxCV1, auxTest1);
 
+    createDataLabels(auxTrain1, false, auxLabelTrain1);
+    createDataLabels(auxCV1,    false, auxLabelCV1);
+    createDataLabels(auxTest1,  false, auxLabelTest1);
+
+
+
+    // LH_PositiveData_MatList
+    cv::Mat auxTrain2,      auxCV2,         auxTest2,
+            auxLabelTrain2, auxLabelCV2,    auxLabelTest2;
+    splitDataInSets(LH_AllTruePos, trainPerc, cvPerc, testPerc, auxTrain2, auxCV2, auxTest2);
+
+    createDataLabels(auxTrain2, true, auxLabelTrain2);
+    createDataLabels(auxCV2,    true, auxLabelCV2);
+    createDataLabels(auxTest2,  true, auxLabelTest2);
+
+
+
+    // ? Needed ?
+    // merge data and labels in the same way to make sure we have correlated data
+    mergeMats(auxTrain1, auxTrain2, data_train_output);
+    mergeMats(auxCV1,    auxCV2,    data_CV_output);
+    mergeMats(auxTest1,  auxTest2,  data_test_output);
+
+    mergeMats(auxLabelTrain1, auxLabelTrain2, labels_train_output);
+    mergeMats(auxLabelCV1,    auxLabelCV2,    labels_CV_output);
+    mergeMats(auxLabelTest1,  auxLabelTest2,  labels_test_output);
+    */
 }
 
 void SemanticDetector::getClassifiersTrainData(InfoClassifier &infoClas,

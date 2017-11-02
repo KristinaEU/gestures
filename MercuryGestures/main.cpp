@@ -1075,7 +1075,7 @@ void manage(int movieIndex) {
     */
 
 #else
-
+    /*
     //videoList.push_back("tr086_spk13m.mp4");
     videoList.push_back("de001_spk02f.mp4");
     videoList.push_back("de003_spk01f.mp4");
@@ -1099,7 +1099,7 @@ void manage(int movieIndex) {
     videoList.push_back("de031_spk03f.mp4");
     videoList.push_back("de033_spk02m.mp4");
     videoList.push_back("de033_spk03f.mp4");
-
+    */
     /*
     videoList.push_back("es008_spk02f.mp4");
     videoList.push_back("es008_spk03m.mp4");
@@ -1116,6 +1116,35 @@ void manage(int movieIndex) {
     */
 
 
+    //Right Hand
+    videoList.push_back("RHShake00.mp4");
+    videoList.push_back("RHShake01.mp4");
+    videoList.push_back("RHShake02.mp4");
+    videoList.push_back("RHShake03.mp4");
+    videoList.push_back("RHShake04.mp4");
+    videoList.push_back("RHShake05.mp4");
+    videoList.push_back("RHShake06.mp4");
+    videoList.push_back("RHShake07.mp4");
+    videoList.push_back("RHShake08.mp4");
+    videoList.push_back("RHShake09.mp4");
+    videoList.push_back("RHShake10.mp4");
+
+    videoList.push_back("RHShake11.mp4");
+    videoList.push_back("RHShake12.mp4");
+    videoList.push_back("RHShake13.mp4");
+    videoList.push_back("RHShake14.mp4");
+    videoList.push_back("RHShake15.mp4");
+    videoList.push_back("RHShake16.mp4");
+    videoList.push_back("RHShake17.mp4");
+    videoList.push_back("RHShake18.mp4");
+    videoList.push_back("RHShake19.mp4");
+    videoList.push_back("RHShake20.mp4");
+    videoList.push_back("RHShake21.mp4");
+    videoList.push_back("RHShake22.mp4");
+    videoList.push_back("RHShake23.mp4");
+    videoList.push_back("RHShake24.mp4");
+
+
     /*
     //Head Shake
     int numOfHeadShakeVideos = 50;
@@ -1124,14 +1153,14 @@ void manage(int movieIndex) {
         videoList.push_back(videoName);
     }
     */
-
+    /*
     //Head Nod
     int numOfHeadNodVideos = 50;
     for(int i = 0; i < numOfHeadNodVideos; i++){
         std::string videoName = "headNod" + std::to_string(i) + ".mp4";
         videoList.push_back(videoName);
     }
-
+    */
 
 #endif // TRAINING
 
@@ -1283,10 +1312,8 @@ int main(int argc, char *argv[]) {
     std::string head_Str  = "Head";
 
     int fps = 29; // just for now
-    SemanticDetector handsSemanticDetector(fps, hands_Str);
+    SemanticDetector handsSemanticDetector(fps, hands_Str, "rightHand");
     SemanticDetector headSemanticDetector(fps, head_Str);
-
-
 
     // TRAINING_SAVE_DATA
     // handsSemanticDetector.storeVideoData(pathVideos, pathData, goalPoints);
@@ -1298,15 +1325,12 @@ int main(int argc, char *argv[]) {
     getInfoClas(hands_Str, infoClasHands);
 
     //headSemanticDetector.trainClassifier(infoClasHead);
-    //handsSemanticDetector.trainClassifier(infoClasHands);
-
-    // detect semantic gestures
-    // handsSemanticDetector.detect(faceCenterPoint, pixelSizeInCmTemp, handPositions, frameIndex); // frameIndex can be not used for normal running
+    handsSemanticDetector.trainClassifier(infoClasHands);
 
     //numberOfVideos = 50;
     //manage(numberOfVideos - 1);
 #else
-    numberOfVideos = 50;//22;
+    numberOfVideos = 25;//22;
     manage(numberOfVideos - 1);
 #endif
 
