@@ -22,10 +22,25 @@
 
 /*
 * Tell the hands which one is left and right, give them specific colors for drawing, set the fps.
+*
+* bodyPart  -> "Head" or "Hands"
+*
+* If "Hands" is specified in bodyPart parameter than hands parameters has to hold one of the follow values:
+* - "leftHand"
+* - "rightHand"
+* - "bothHands"
 */
-SemanticDetector::SemanticDetector(int fps, std::string bodyPart) {
+SemanticDetector::SemanticDetector(int fps, std::string bodyPart, std::string hands) {
 	this->fps = fps;
 	this->bodyPart = bodyPart;
+	if(this->bodyPart == "Hands"){
+        if( (hands != "leftHand") && (hands != "rightHand") && (hands != "bothHands") ){
+            std::cout << "WARNING: hands not defined in semantic detector constructor!!" << std::endl;
+            //ERROR
+        }else{
+            this->hands = hands;
+        }
+	}
 }
 
 SemanticDetector::~SemanticDetector() {}
@@ -2018,11 +2033,6 @@ void SemanticDetector::detect(const char classifierName[],
                           this->interpolationTimeStep,
                           positionsToDetect,
                           allConcat);
-                          /*LHandPositions,
-                          RHandPositions,
-                          LHAllConcat,
-                          RHAllConcat
-                          */
 
         // convert data to cv::Mat
         cv::Mat LHAllInfo(allConcat[0], true);
@@ -2032,16 +2042,15 @@ void SemanticDetector::detect(const char classifierName[],
         RHAllInfo.convertTo(RHAllInfo, CV_32F);
 
         // transpose - convert vector into one single row (1xn)
-        // !!----------------------------------------------!!
-        // !! ---- BAD IMPLEMENTATION --- just for now ----!!
-        // !!----------------------------------------------!!
-        //if(classifierName == "LHClassifier.xml"){
-        //    std::cout << "HERE 1" << std::endl;
+        if(this->hands == "leftHand"){
             allInfo = LHAllInfo.t();
-        //}else{
-        //    std::cout << "HERE 2" << std::endl;
-        //    allInfo = RHAllInfo.t();
-        //}
+        }else if(this->hands == "rightHand"){
+            allInfo = RHAllInfo.t();
+        }else if(this->hands == "bothHands"){
+            vconcat(LHAllInfo.t(), RHAllInfo.t(), allInfo);
+        }else{
+            // ERROR
+        }
 
     }
     else {

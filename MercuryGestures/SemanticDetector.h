@@ -132,6 +132,7 @@ public:
 	int frameWidth;
 	int frameHeight;
     std::string bodyPart; // body part to be analyzed ("Head" or "Hands")
+    std::string hands;
     double minTimeToDetect = 3.0; // (3 sec) time to detect a gesture
     double interpolationTimeStep = 0.02; // (seconds)
     double normalizationFaceHandDistance = 100; // (cm) it will make the face-hand distances be around the range of -1 to +1
@@ -146,7 +147,7 @@ public:
 
 
 
-	SemanticDetector(int fps, std::string bodyPart);
+	SemanticDetector(int fps, std::string bodyPart, std::string hands = "EMPTYHANDS");
 	~SemanticDetector();
 
     void detect(const char classifierName[],

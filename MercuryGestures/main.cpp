@@ -545,8 +545,8 @@ int run(cv::VideoCapture& cap, int fps) {
 	ActivityGraph activityGraph(fps);
 	FaceDetector  faceDetector;
 
-	SemanticDetector LHShakeDetector(fps, "Hands");
-	SemanticDetector RHShakeDetector(fps, "Hands");
+	SemanticDetector LHShakeDetector(fps, "Hands", "leftHand");
+	SemanticDetector RHShakeDetector(fps, "Hands", "rightHand");
     //SemanticDetector handsSemanticDetector(fps, "Hands");
 
 	SemanticDetector headShakeDetector(fps, "Head");
@@ -773,17 +773,6 @@ int run(cv::VideoCapture& cap, int fps) {
                 // predictions
 
                 #ifndef TRAINING
-                    /*
-                    "LHClassifier.xml"
-                    "RHClassifier.xml"
-
-                    "headShakeClassifier.xml"
-                    "headNodClassifier.xml"
-                    */
-
-                    //for(int i = 0; i < numClassifiers; i++){
-
-                    //}
 
                     // detect hands semantic gestures
                     float LHShakeVal    = 0.0,
@@ -1086,7 +1075,7 @@ void manage(int movieIndex) {
     */
 
 #else
-/*
+
     //videoList.push_back("tr086_spk13m.mp4");
     videoList.push_back("de001_spk02f.mp4");
     videoList.push_back("de003_spk01f.mp4");
@@ -1110,7 +1099,7 @@ void manage(int movieIndex) {
     videoList.push_back("de031_spk03f.mp4");
     videoList.push_back("de033_spk02m.mp4");
     videoList.push_back("de033_spk03f.mp4");
-*/
+
     /*
     videoList.push_back("es008_spk02f.mp4");
     videoList.push_back("es008_spk03m.mp4");
@@ -1127,22 +1116,22 @@ void manage(int movieIndex) {
     */
 
 
-
+    /*
     //Head Shake
     int numOfHeadShakeVideos = 50;
     for(int i = 0; i < numOfHeadShakeVideos; i++){
         std::string videoName = "headShake" + std::to_string(i) + ".mp4";
         videoList.push_back(videoName);
     }
+    */
 
-    /*
     //Head Nod
     int numOfHeadNodVideos = 50;
     for(int i = 0; i < numOfHeadNodVideos; i++){
         std::string videoName = "headNod" + std::to_string(i) + ".mp4";
         videoList.push_back(videoName);
     }
-    */
+
 
 #endif // TRAINING
 
@@ -1258,17 +1247,17 @@ void getInfoClas(std::string bodyPart, InfoClassifier &infoClas_output){
         infoClas_output.genEllipticalPosInfo.f_end     = 2.0;
 
 
-        infoClas_output.trainingSets.trainPerc         = 0.6;
-        infoClas_output.trainingSets.cvPerc            = 0.2;
-        infoClas_output.trainingSets.testPerc          = 0.2;
+        infoClas_output.trainingSets.trainPerc         = 0.79;
+        infoClas_output.trainingSets.cvPerc            = 0.02;
+        infoClas_output.trainingSets.testPerc          = 0.19;
 
         //use_LH = true;
         //use_RH = false;
 
-        infoClas_output.use_LH_StaticPos_for_negativeData     = true;
-        infoClas_output.use_LH_EllipticalPos_for_negativeData = true;
-        infoClas_output.use_RH_StaticPos_for_negativeData     = false;
-        infoClas_output.use_RH_EllipticalPos_for_negativeData = false;
+        infoClas_output.use_LH_StaticPos_for_negativeData     = false; //true;
+        infoClas_output.use_LH_EllipticalPos_for_negativeData = false; //true;
+        infoClas_output.use_RH_StaticPos_for_negativeData     = true;  //false;
+        infoClas_output.use_RH_EllipticalPos_for_negativeData = true;  //false;
 
         infoClas_output.use_LH_StaticPos_for_positiveData     = false;
         infoClas_output.use_LH_EllipticalPos_for_positiveData = false;
