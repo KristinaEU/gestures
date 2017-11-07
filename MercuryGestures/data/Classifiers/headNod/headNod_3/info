@@ -1,0 +1,81 @@
+|--- I'm in training mode! ---|
+Reading positive data...
+	headPositionsList_positiveData size = 50000
+DONE
+Reading negative data...
+	headPositionsList_negativeData size = 90000
+DONE
+head_PositiveData_MatList  => rows: 50000, cols: 598
+head_NegativeData_MatList  => rows: 90000, cols: 598
+head_AllTruePos   => rows: 50000, cols: 598
+head_AllFalsePos  => rows: 90000, cols: 598
+trainPerc = 0.79	 cvPerc = 0.02	 testPerc = 0.19
+firstLimit = 790	 secondLimit = 810
+trainPerc = 0.79	 cvPerc = 0.02	 testPerc = 0.19
+firstLimit = 790	 secondLimit = 810
+data_train   => rows: 110600, cols: 598
+labels_train => rows: 110600, cols: 1
+data_CV      => rows: 2800, cols: 598
+labels_CV    => rows: 2800, cols: 1
+data_test    => rows: 26600, cols: 598
+labels_test  => rows: 26600, cols: 1
+learningRate  = 10000
+/-----------------------------------------/
+iterations    = 10
+setting training parameters...
+training...
+	elapsed time: 13.4503s
+done!
+saving the classifier to headNodClassifier.xml
+Accuracy: 64.2857%
+Precision: -nan
+Recall: 0
+F1Score: -nan
+data_train: 
+a1 = [29797.201]
+a2 = [-43821.855]
+J1 = [0.66563344]
+J2 = [673.22675]
+	J = [673.8924]
+data_CV: 
+a1 = [754.12433]
+a2 = [-1109.0505]
+J1 = [0.66541958]
+J2 = [17.043715]
+	J = [17.709133]
+data_test: 
+a1 = [7167.1758]
+a2 = [-10539.25]
+J1 = [0.66565508]
+J2 = [161.91528]
+	J = [162.58093]
+/-----------------------------------------/
+iterations    = 50000
+setting training parameters...
+training...
+	elapsed time: 39490.8s
+done!
+saving the classifier to headNodClassifier.xml
+Accuracy: 99.3797%
+Precision: 0.990748
+Recall: 0.991895
+F1Score: 0.991321
+data_train: 
+a1 = [1373.9008]
+a2 = [-1441.3512]
+J1 = [0.025454357]
+J2 = [30532230]
+	J = [30532230]
+data_CV: 
+a1 = [34.744305]
+a2 = [-32.296703]
+J1 = [0.023943217]
+J2 = [772967.81]
+	J = [772967.81]
+data_test: 
+a1 = [355.5838]
+a2 = [-364.22214]
+J1 = [0.027060373]
+J2 = [7343194.5]
+	J = [7343194.5]
+

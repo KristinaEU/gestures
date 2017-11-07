@@ -1410,6 +1410,7 @@ void SemanticDetector::getClassifiersTrainDataForHands(InfoClassifier &infoClas,
     LHandPositionsList_positiveData = positionsList_positiveData[0];
     RHandPositionsList_positiveData = positionsList_positiveData[1];
     std::cout << "\tLHandPositionsList_positiveData size = " << LHandPositionsList_positiveData.size() << std::endl;
+    std::cout << "\tRHandPositionsList_positiveData size = " << RHandPositionsList_positiveData.size() << std::endl;
     std::cout << "DONE" << std::endl;
 
     //cv::Mat vals(LHandPositionsList_positiveData, true);
@@ -1427,6 +1428,7 @@ void SemanticDetector::getClassifiersTrainDataForHands(InfoClassifier &infoClas,
     LHandPositionsList_negativeData = positionsList_negativeData[0];
     RHandPositionsList_negativeData = positionsList_negativeData[1];
     std::cout << "\tLHandPositionsList_negativeData size = " << LHandPositionsList_negativeData.size() << std::endl;
+    std::cout << "\tRHandPositionsList_negativeData size = " << RHandPositionsList_negativeData.size() << std::endl;
     std::cout << "DONE" << std::endl;
 
     // If one of the static positions is required for any hand  then generate it
@@ -1897,7 +1899,7 @@ void SemanticDetector::logisticsTrain(InfoClassifier &infoClas,
     int iterations,
         miniBatchSize = 1;
 
-    std::vector<int> iterationsArray = {10, 100};
+    std::vector<int> iterationsArray = {50, 16600};
     std::cout << "learningRate  = " << learningRate << std::endl;
 
     for(int i = 0; i < iterationsArray.size(); i++){

@@ -823,6 +823,9 @@ int run(cv::VideoCapture& cap, int fps) {
                         }
                     }
 
+                    std::cout << "\n\n " << std::endl;
+                    std::cout << "codeLH = "            << " \t\t -> "  << codeLH   << std::endl;
+                    std::cout << "codeRH = "            << " \t\t -> "  << codeRH   << std::endl;
 
                     std::cout << LHClassifier           << " \t\t -> "  << gestureCodeMap.at(LHClassifier)          << std::endl;
                     std::cout << RHClassifier           << " \t\t -> "  << gestureCodeMap.at(RHClassifier)          << std::endl;
@@ -1220,9 +1223,9 @@ void manage(int movieIndex) {
 void getInfoClas(std::string bodyPart, InfoClassifier &infoClas_output){
 
     if(bodyPart == "Head"){
-        infoClas_output.newClassifierName     = "headNodClassifier.xml";       // classifier name while training training
+        infoClas_output.newClassifierName     = "headShakeClassifier.xml";       // classifier name while training training
 
-        infoClas_output.pathPositiveData   = "data/SelectedData/headNod/createdData/";    // for positive gestures
+        infoClas_output.pathPositiveData   = "data/SelectedData/RHShake/createdData/";    // for positive gestures
         infoClas_output.pathNegativeData   = "data/negativeData/";                          // for negative gestures
 
 
@@ -1234,11 +1237,11 @@ void getInfoClas(std::string bodyPart, InfoClassifier &infoClas_output){
         //infoClas_output.saveFilename
     }
     else if(bodyPart == "Hands"){
-        infoClas_output.newClassifierName     = "RHClassifier.xml";
+        infoClas_output.newClassifierName     = "LHClassifier.xml";
 
-        infoClas_output.pathPositiveData   = "data/SelectedData/RHShake/createdData/";         // for positive gestures
+        infoClas_output.pathPositiveData   = "data/SelectedData/LHShake/createdData/";         // for positive gestures
         infoClas_output.pathNegativeData   = "data/SelectedData/StaticHandsUp/createdData/";   // for negative gestures
-        infoClas_output.pathClassifier     = "classifier/headShakeClassifier.xml";                               // classifier path
+        //infoClas_output.pathClassifier     = "classifier/headShakeClassifier.xml";                               // classifier path
 
         infoClas_output.XmaxWindow         = 500;
         infoClas_output.YmaxWindow         = 300;
@@ -1282,11 +1285,11 @@ void getInfoClas(std::string bodyPart, InfoClassifier &infoClas_output){
 
         //use_LH = true;
         //use_RH = false;
-
-        infoClas_output.use_LH_StaticPos_for_negativeData     = false; //true;
-        infoClas_output.use_LH_EllipticalPos_for_negativeData = false; //true;
-        infoClas_output.use_RH_StaticPos_for_negativeData     = true;  //false;
-        infoClas_output.use_RH_EllipticalPos_for_negativeData = true;  //false;
+                                                                        //  RH      LH
+        infoClas_output.use_LH_StaticPos_for_negativeData     = true;   //  false; //true;
+        infoClas_output.use_LH_EllipticalPos_for_negativeData = true;   //  false; //true;
+        infoClas_output.use_RH_StaticPos_for_negativeData     = false;  //  true;  //false;
+        infoClas_output.use_RH_EllipticalPos_for_negativeData = false;  //  true;  //false;
 
         infoClas_output.use_LH_StaticPos_for_positiveData     = false;
         infoClas_output.use_LH_EllipticalPos_for_positiveData = false;
@@ -1312,7 +1315,7 @@ int main(int argc, char *argv[]) {
     std::string head_Str  = "Head";
 
     int fps = 29; // just for now
-    SemanticDetector handsSemanticDetector(fps, hands_Str, "rightHand");
+    SemanticDetector handsSemanticDetector(fps, hands_Str, "leftHand");
     SemanticDetector headSemanticDetector(fps, head_Str);
 
     // TRAINING_SAVE_DATA

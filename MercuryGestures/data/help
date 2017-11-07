@@ -1,0 +1,5 @@
+DELETE:
+    find negativeData -name "*" -delete
+COPY:
+    rsync -r --include='*' SelectedData/headShake/createdData/  .
+
