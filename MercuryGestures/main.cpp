@@ -1078,7 +1078,7 @@ void manage(int movieIndex) {
     */
 
 #else
-    /*
+
     //videoList.push_back("tr086_spk13m.mp4");
     videoList.push_back("de001_spk02f.mp4");
     videoList.push_back("de003_spk01f.mp4");
@@ -1102,7 +1102,7 @@ void manage(int movieIndex) {
     videoList.push_back("de031_spk03f.mp4");
     videoList.push_back("de033_spk02m.mp4");
     videoList.push_back("de033_spk03f.mp4");
-    */
+
     /*
     videoList.push_back("es008_spk02f.mp4");
     videoList.push_back("es008_spk03m.mp4");
