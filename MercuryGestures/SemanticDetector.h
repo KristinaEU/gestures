@@ -214,6 +214,9 @@ private:
 
     void mergeMats(cv::Mat &mat1, cv::Mat &mat2, cv::Mat &matOutput);
 
+
+    int binary_search(const std::vector<double> &sorted_vec, double key);
+
 	double _interpolate( std::vector<double> &xData, std::vector<double> &yData, double x, bool extrapolate );
 
     void scaleAndMeanNormalization(cv::Point &faceCenterPoint,

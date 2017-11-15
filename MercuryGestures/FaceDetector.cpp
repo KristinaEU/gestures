@@ -55,7 +55,7 @@ void FaceDetector::draw(cv::Mat& canvas) {
 bool FaceDetector::detectFace(cv::Mat& grayscaleImage, FaceData & data) {
 	std::vector<cv::Rect> faces;
 	int minFaceSize = 0.2 * this->frameHeight;
-	this->face_cascade.detectMultiScale(grayscaleImage, faces, 1.1, 1, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(minFaceSize, minFaceSize));
+	this->face_cascade.detectMultiScale(grayscaleImage, faces, 1.3, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(minFaceSize, minFaceSize));
 	data.count = faces.size();
 	if (faces.size() > 0) {
 		data.rect = faces[0];
@@ -69,7 +69,7 @@ bool FaceDetector::detectFace(cv::Mat& grayscaleImage, FaceData & data) {
  * Detect a face in a grayscale image.
  */
 bool FaceDetector::detect(cv::Mat& gray) {
-	auto start = std::chrono::high_resolution_clock::now();
+//	auto start = std::chrono::high_resolution_clock::now();
 	// face detection for normalization
 	FaceData newFaces;
 	float movementThreshold = this->faceAreaThresholdFactor * this->frameWidth;
@@ -93,6 +93,11 @@ bool FaceDetector::detect(cv::Mat& gray) {
 		// detect in full image
 		detected = this->detectFace(gray, newFaces);
 	}
+
+//    auto elapsed = std::chrono::high_resolution_clock::now() - start;
+//	double duration = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() / 1000.0;
+
+//	std::cout<<"Facedetector runtime "<<duration<<" ms ("<<detected<<")";
 
 	if (detected) {
 		this->badReadings = 0;

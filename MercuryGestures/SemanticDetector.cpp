@@ -51,6 +51,28 @@ void SemanticDetector::setVideoProperties(int frameWidth, int frameHeight) {
 	this->frameWidth = frameWidth;
 }
 
+
+int SemanticDetector::binary_search(const std::vector<double> &sorted_vec, double key) {
+   size_t mid, left = 0 ;
+   size_t right = sorted_vec.size(); // one position passed the right end
+   while (left < right) {
+      mid = left + (right - left)/2;
+      if (key > sorted_vec[mid]){
+          left = mid+1;
+      }
+      else if (key < sorted_vec[mid]){
+        right = mid;
+      }
+      else {
+        return mid;
+     }
+   }
+
+   return left;
+}
+
+
+
 /*
 * Took from:
 * http://www.cplusplus.com/forum/general/216928/
@@ -72,7 +94,8 @@ double SemanticDetector::_interpolate( std::vector<double> &xData,
     }
     else
     {
-        while ( x > xData[i+1] ) i++;
+       i = binary_search(xData,x);
+       //while ( x > xData[i+1] ) i++;
     }
     double xL = xData[i], yL = yData[i], xR = xData[i+1], yR = yData[i+1];      // points on either side (unless beyond ends)
     if ( !extrapolate )                                                         // if beyond ends of array and not extrapolating
