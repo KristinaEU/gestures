@@ -560,7 +560,8 @@ int run(cv::VideoCapture& cap, int fps) {
     cv::Mat rawFrame, frame, gray, grayPrev, faceMat, roiMask, temporalSkinMask;
     cv::Mat white, bw, canny;
 
-    int frameHeightMax = 300;
+    int frameHeightMax = 400;
+    //int frameHeightMax = 240;
 
 	BodyRects body;
 
@@ -617,8 +618,8 @@ int run(cv::VideoCapture& cap, int fps) {
 		// convert frame to grayscale
 		cv::cvtColor(frame, gray, CV_BGR2GRAY);
 
-		cv::imshow("raw", frame);
-        cv::imshow("gray", gray);
+		//cv::imshow("raw", frame);
+        //cv::imshow("gray", gray);
 
 
         const char LHClassifier[]           = "LHClassifier.xml",
@@ -672,7 +673,7 @@ int run(cv::VideoCapture& cap, int fps) {
 				handDetector.drawTraces(frame);
 
 				faceDetector.draw(faceMat);
-				cv::imshow("face", faceMat);
+				//cv::imshow("face", faceMat);
 
 				// create the ROI map with just the hands and the face. This would reduce the difference
 				// between long and short sleeves.
@@ -694,8 +695,8 @@ int run(cv::VideoCapture& cap, int fps) {
 
                 //movementDetector.show("maskedSkinMovement");
                 //skinDetector.show();
-                edgeDetector.show();
-                handDetector.show();
+                //edgeDetector.show();
+                //handDetector.show();
 
                 // ADDED for mannequin en handposition labels
                 int codeLH=0, codeRH=0;
@@ -710,7 +711,7 @@ int run(cv::VideoCapture& cap, int fps) {
                 findEyes(faceRect, frame, white, true );
                 headTiltRotate(faceRect, frame, white);
                 drawPuppet(leftHand, rightHand, faceRect, white, true, codeLH, codeRH);
-                cv::imshow("white", white);
+                //cv::imshow("white", white);
                 // ADDED for mannequin en handposition labels
 
                 bool leftHandMissing = false;
@@ -902,7 +903,7 @@ int run(cv::VideoCapture& cap, int fps) {
 
         // mixed van blobs, canny en lines
 
-        cv::imshow("DebugGUI", frame);
+        //cv::imshow("DebugGUI", frame);
         if ((initialized && first) || startOk) {
             cv::moveWindow("white", 2000, 0);
             cv::moveWindow("face", 2000, 340);
@@ -1188,7 +1189,9 @@ void manage(int movieIndex) {
         std::cout << "WARNING: COULD NOT GET FPS; Defaulting to 25fps." << std::endl;
     }
 
-    value = run(cap, fps);
+
+    //value = run(cap, fps);
+    value = 97;
     int newIndex = movieIndex;
 
     if (value == 1)		  // next movie
@@ -1198,11 +1201,16 @@ void manage(int movieIndex) {
 
     else if (value == 97) { // key = a
         cap.open(0); // open camera
-        fps=24;
+        fps=15;
+        cap.set(CV_CAP_PROP_FRAME_WIDTH,320);
+        cap.set(CV_CAP_PROP_FRAME_HEIGHT,240);
+        cap.set(CV_CAP_PROP_FPS,fps);
+        cap.set(CV_CAP_PROP_FOURCC,CV_FOURCC('Y','U','Y','V'));
+
         value = run(cap, fps);
         cap.release();
-    }
-    else if (value != 0) {
+
+    } else if (value != 0) {
         return;  // quit
     }
     else {
